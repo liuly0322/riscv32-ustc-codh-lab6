@@ -1,4 +1,4 @@
-# USTC-CODH-LAB6
+# USTC-CODH-LAB6 实验
 
 USTC CODH 课程的综合实验
 
