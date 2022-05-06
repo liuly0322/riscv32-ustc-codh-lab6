@@ -12,60 +12,69 @@ module  cpu (
         // Debug_BUS
         output [31:0] pc,      	// 当前执行指令地址
         input [15:0] chk_addr,	// 数据通路状态的编码地址
-        output [31:0] chk_data    // 数据通路状态的数据
+        output [31:0] chk_data  // 数据通路状态的数据
     );
 
+// 变量命名约定：对于段间寄存器，统一取前一段作为命名后缀
+// 对于段内寄存器，取所在段作为命名后缀
 
-wire [31:0]	ir_IF;
-wire [31:0]	pc_IF;
-wire [31:0]	pc_4_IF;
-wire [31: 0] reg_data_debug;
-wire [31: 0] pc_ID;
-wire [31: 0] pc_4_ID;
-wire [31: 0] rd1_ID;
-wire [31: 0] rd2_ID;
-wire [31: 0] imm_ID;
-wire [2: 0]  ctrl_branch_ID;
-wire ctrl_jump_ID;
-wire ctrl_mem_r_ID;
-wire ctrl_mem_w_ID;
-wire [1:0] ctrl_wb_reg_src_ID;
-wire [2:0] ctrl_alu_op_ID;
-wire ctrl_pc_add_src_ID;
-wire ctrl_alu_src1_ID;
-wire ctrl_alu_src2_ID;
-wire ctrl_reg_write_ID;
+// if 段
+wire          stall_IF;             // if 段停顿，目前是由于 load-use hazard
+wire [31:0]	  pc_IF;                // if/id 段的 pc，可以认为是正在执行的指令
+wire [31:0]	  ir_IF;                // if/id 段正在执行的指令
+wire [31:0]	  pc_4_IF;              // if/id 段正在执行的指令 pc + 4
+
+// id 段
+wire          flush_ID;             // 清空 id，目前是由于 load-use hazard 或者 pc 变动（与预测的 pc 不符）
+wire [31: 0]  reg_data_debug;       // pdu 使用的读寄存器
+wire [31: 0]  pc_ID;                // id/mem 段 pc
+wire [31: 0]  pc_4_ID;              // id/mem 段 pc+4
+wire          predict;              // id 段，如果正在执行的指令是分支指令，预测是否跳转
+wire [31: 0]  pc_nxt;               // id 段，结合 predict 和 pc_4_IF 得出下一条发射的 pc，交给 if
+wire          predict_ID;           // id/mem 段 predict
+wire [31: 0]  rd1_ID;               // id/mem 段 rd1，已经过 forward 处理
+wire [31: 0]  rd2_ID;               // id/mem 段 rd2，已经过 forward 处理
+wire [31: 0]  imm_ID;               // id/mem 段 imm
+wire [2: 0]   ctrl_branch_ID;
+wire          ctrl_mem_r_ID;
+wire          ctrl_mem_w_ID;
+wire [1:0]    ctrl_wb_reg_src_ID;
+wire [4: 0]   reg_wb_addr_ID;
+wire [2:0]    ctrl_alu_op_ID;
+wire          ctrl_jalr_ID;
+wire          ctrl_alu_src1_ID;
+wire          ctrl_alu_src2_ID;
+wire          ctrl_reg_write_ID;
+wire          load_use_hazard;      // 检测当前指令是否与前一条 ld 指令产生相关，如果是，stall if 并 flush id
+
+// ex 段
 wire          ctrl_reg_write_EX;
 wire [1: 0]   ctrl_wb_reg_src_EX;
+wire [4: 0]   reg_wb_addr_EX;
 wire          ctrl_mem_r_EX;
+wire [31: 0]  alu_out;              // 直接连接 alu 输出（forward 用）
 wire [31: 0]  alu_out_EX;
-wire         pc_branch_EX;
-wire         pc_jump_EX;
-wire [31: 0]  pc_nxt_EX;
+wire          pc_change_EX;         // pc 是否需要更改（预测失败或者 jalr）
+wire [31: 0]  pc_nxt_EX;            // 更改后的 pc
+wire          record_we;            // 是否记录分支历史，即当前 ex 段是否是分支指令
+wire [4: 0]   record_pc;            // 记录的 pc[6:2]
+wire          record_data;          // 当前分支指令是否跳转
 wire [31: 0]  rd2_EX;
 wire [31: 0]  pc_4_EX;
 wire          ctrl_mem_w_EX;
+
+// mem 段
+wire [31: 0]  mem_data_debug;
 wire [31: 0]  pc_4_MEM;
 wire [31: 0]  alu_out_MEM;
-wire [31: 0]  mdr;
+wire [31: 0]  mdr;                  // 直接连接内存读出数据端口（forward 用）
 wire [31: 0]  mdr_MEM;
 wire [1: 0]   ctrl_wb_reg_src_MEM;
-wire [31: 0] mem_data_debug;
-wire         reg_wb_en;
-wire [4: 0]  reg_wb_addr;
-wire [4: 0]  reg_wb_addr_ID;
-wire [4: 0]  reg_wb_addr_EX;
-wire [31: 0] reg_wb_data;
-wire [31: 0] alu_out;
-wire load_use_hazard;
-wire stall_IF;
-wire flush_ID;
-wire predict_ID;
-wire record_we;                // 是否记录分支历史
-wire [4: 0] record_pc;         // 记录的 pc[6:2]
-wire record_data;              // 是否跳转
-wire predict;
-wire [31: 0] pc_nxt;
+wire [4: 0]   reg_wb_addr_MEM;
+
+// wb 段（写回 id 段，这里都是 mem/wb 的段间寄存器）
+wire          reg_wb_en;
+wire [31: 0]  reg_wb_data;
 
 branch_predict u_branch_predict(
 	.clk           		( clk           		),
@@ -80,8 +89,7 @@ branch_predict u_branch_predict(
 hazard u_hazard(
     .rstn               ( rstn              ),
     .load_use_hazard    ( load_use_hazard   ),
-    .pc_branch_EX       ( pc_branch_EX      ), 
-    .pc_jump_EX         ( pc_jump_EX        ),
+    .pc_change_EX       ( pc_change_EX      ),
     .stall_IF           ( stall_IF          ),
     .flush_ID           ( flush_ID          )
 );
@@ -91,8 +99,7 @@ IF u_IF(
     .stall_IF           ( stall_IF          ),
     .pc_nxt             ( pc_nxt            ),
 	.pc_nxt_EX    		( pc_nxt_EX    		),
-	.pc_branch_EX 		( pc_branch_EX 		),
-	.pc_jump_EX   		( pc_jump_EX   		),
+	.pc_change_EX 		( pc_change_EX 		),
 	.ir_IF        		( ir_IF        		),
 	.pc_IF        		( pc_IF        		),
 	.pc_4_IF      		( pc_4_IF      		)
@@ -114,7 +121,7 @@ ID u_ID(
     .reg_addr_debug     ( reg_addr_debug    ),
     .reg_data_debug     ( reg_data_debug    ),
     .reg_wb_en          ( reg_wb_en         ),
-    .reg_wb_addr        ( reg_wb_addr       ),
+    .reg_wb_addr_MEM    ( reg_wb_addr_MEM   ),
     .reg_wb_data        ( reg_wb_data       ),
     .alu_out            ( alu_out           ),
     .load_use_hazard    ( load_use_hazard   ),
@@ -129,12 +136,11 @@ ID u_ID(
     .imm_ID             ( imm_ID            ),
     .reg_wb_addr_ID     ( reg_wb_addr_ID    ),
     .ctrl_branch_ID     ( ctrl_branch_ID    ),
-    .ctrl_jump_ID       ( ctrl_jump_ID      ),
     .ctrl_mem_r_ID      ( ctrl_mem_r_ID     ),
     .ctrl_mem_w_ID      ( ctrl_mem_w_ID     ),
     .ctrl_wb_reg_src_ID ( ctrl_wb_reg_src_ID),
     .ctrl_alu_op_ID     ( ctrl_alu_op_ID    ),
-    .ctrl_pc_add_src_ID ( ctrl_pc_add_src_ID),
+    .ctrl_jalr_ID       ( ctrl_jalr_ID      ),
     .ctrl_alu_src1_ID   ( ctrl_alu_src1_ID  ),
     .ctrl_alu_src2_ID   ( ctrl_alu_src2_ID  ),
     .ctrl_reg_write_ID  ( ctrl_reg_write_ID )
@@ -150,9 +156,8 @@ EX u_EX(
     .ctrl_alu_op_ID     ( ctrl_alu_op_ID    ),
     .ctrl_alu_src1_ID   ( ctrl_alu_src1_ID  ),
     .ctrl_alu_src2_ID   ( ctrl_alu_src2_ID  ),
-    .ctrl_pc_add_src_ID ( ctrl_pc_add_src_ID),
+    .ctrl_jalr_ID       ( ctrl_jalr_ID      ),
     .ctrl_branch_ID     ( ctrl_branch_ID    ),
-    .ctrl_jump_ID       ( ctrl_jump_ID      ),
     .imm_ID             ( imm_ID            ),
     .rd1_ID             ( rd1_ID            ),
     .pc_ID              ( pc_ID             ),
@@ -168,8 +173,7 @@ EX u_EX(
     .ctrl_wb_reg_src_EX ( ctrl_wb_reg_src_EX),
     .ctrl_mem_r_EX      ( ctrl_mem_r_EX     ),
     .alu_out_EX         ( alu_out_EX        ),
-    .pc_branch_EX       ( pc_branch_EX      ),
-    .pc_jump_EX         ( pc_jump_EX        ),
+    .pc_change_EX       ( pc_change_EX      ),
     .pc_nxt_EX          ( pc_nxt_EX         ),
     .rd2_EX             ( rd2_EX            ),
     .pc_4_EX            ( pc_4_EX           ),
@@ -200,7 +204,7 @@ MEM u_MEM(
     .mdr_MEM            ( mdr_MEM           ),
     .reg_wb_addr_EX     ( reg_wb_addr_EX    ),
     .reg_wb_en          ( reg_wb_en         ),
-    .reg_wb_addr        ( reg_wb_addr       ),
+    .reg_wb_addr_MEM    ( reg_wb_addr_MEM   ),
     .ctrl_wb_reg_src_MEM( ctrl_wb_reg_src_MEM)
 );
 
@@ -231,10 +235,10 @@ always @(*) begin
             4'h3:
                 debug_data = ir_IF;
             4'h4:
-                debug_data = {12'h0, ctrl_alu_op_ID, ctrl_alu_src1_ID, ctrl_alu_src2_ID,
-                            ctrl_branch_ID, ctrl_jump_ID, ctrl_mem_r_EX, ctrl_mem_w_EX,
-                            ctrl_pc_add_src_ID, ctrl_reg_write_EX, ctrl_reg_write_ID,
-                            ctrl_wb_reg_src_EX, ctrl_wb_reg_src_ID, ctrl_wb_reg_src_MEM};
+                debug_data = {13'h0, ctrl_alu_op_ID, ctrl_alu_src1_ID, ctrl_alu_src2_ID,
+                            ctrl_branch_ID, ctrl_jalr_ID, ctrl_mem_r_EX, ctrl_mem_w_EX,
+                            ctrl_reg_write_EX, ctrl_reg_write_ID, ctrl_wb_reg_src_EX, 
+                            ctrl_wb_reg_src_ID, ctrl_wb_reg_src_MEM};
             4'h5:
                 debug_data = pc_4_EX;
             4'h6:

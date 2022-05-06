@@ -10,7 +10,7 @@ module ID(
     input  [4: 0]  reg_addr_debug,
     output [31: 0] reg_data_debug,
     input          reg_wb_en,
-    input [4: 0]   reg_wb_addr,
+    input [4: 0]   reg_wb_addr_MEM,
     input [31: 0]  reg_wb_data,
     input [31: 0]  pc_IF,
     input [31: 0]  pc_4_IF,
@@ -28,40 +28,38 @@ module ID(
     output reg [31: 0] imm_ID,
     output reg predict_ID,
     output reg [2: 0]  ctrl_branch_ID,
-    output reg ctrl_jump_ID,
+    output reg ctrl_jalr_ID,
     output reg ctrl_mem_r_ID,
     output reg ctrl_mem_w_ID,
     output reg [1:0] ctrl_wb_reg_src_ID,
     output reg [2:0] ctrl_alu_op_ID,
-    output reg ctrl_pc_add_src_ID,
     output reg ctrl_alu_src1_ID,
     output reg ctrl_alu_src2_ID,
     output reg ctrl_reg_write_ID
     );
 
     wire [2:0] control_branch;
-    wire control_jump;
+    wire control_jal, control_jalr;
     wire control_mem_read;
     wire control_mem_write;
     wire [1:0] control_wb_reg_src;
     wire [2:0] control_alu_op;
-    wire control_pc_add_src;
     wire control_alu_src1;
     wire control_alu_src2;
     wire control_reg_write;
 
     // ID 段组合逻辑计算下一个 IF 段取的地址
-    assign pc_nxt = predict? pc_IF + imm_ext : pc_4_IF;
+    assign pc_nxt = (predict | control_jal)? pc_IF + imm_ext : pc_4_IF;
 
-    control control_unit (.ir(ir_IF), .control_branch(control_branch), .control_jump(control_jump),.control_mem_read(control_mem_read),
-                          .control_mem_write(control_mem_write), .control_wb_reg_src(control_wb_reg_src), .control_alu_op(control_alu_op), .control_pc_add_src(control_pc_add_src),
+    control control_unit (.ir(ir_IF), .control_branch(control_branch), .control_jal(control_jal), .control_jalr(control_jalr), .control_mem_read(control_mem_read),
+                          .control_mem_write(control_mem_write), .control_wb_reg_src(control_wb_reg_src), .control_alu_op(control_alu_op),
                           .control_alu_src1(control_alu_src1), .control_alu_src2(control_alu_src2), .control_reg_write(control_reg_write));
 
     // 寄存器及相关端口
     wire [4:0]  rs2  = ir_IF[24:20];
     wire [4:0]  rs1  = ir_IF[19:15];
     wire [31:0] rd1, rd2;
-    register_file register (.clk(clk), .ra0(rs1), .ra1(rs2), .wa(reg_wb_addr),
+    register_file register (.clk(clk), .ra0(rs1), .ra1(rs2), .wa(reg_wb_addr_MEM),
                             .rd0(rd1), .rd1(rd2), .wd(reg_wb_data), .we(reg_wb_en),
                             .ra_debug(reg_addr_debug), .rd_debug(reg_data_debug));
 
@@ -118,12 +116,11 @@ module ID(
         reg_wb_addr_ID  <= flush_ID? 0: ir_IF[11:7];
         predict_ID      <= flush_ID? 0: predict;
         ctrl_branch_ID  <= flush_ID? 0: control_branch;
-        ctrl_jump_ID    <= flush_ID? 0: control_jump;
+        ctrl_jalr_ID    <= flush_ID? 0: control_jalr;
         ctrl_mem_r_ID   <= flush_ID? 0: control_mem_read;
         ctrl_mem_w_ID   <= flush_ID? 0: control_mem_write;
         ctrl_wb_reg_src_ID <= flush_ID? 0: control_wb_reg_src;
         ctrl_alu_op_ID     <= flush_ID? 0: control_alu_op;
-        ctrl_pc_add_src_ID <= flush_ID? 0: control_pc_add_src;
         ctrl_alu_src1_ID   <= flush_ID? 0: control_alu_src1;
         ctrl_alu_src2_ID   <= flush_ID? 0: control_alu_src2;
         ctrl_reg_write_ID  <= flush_ID? 0: control_reg_write;

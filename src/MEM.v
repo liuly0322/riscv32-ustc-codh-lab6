@@ -21,7 +21,7 @@ module MEM(
     output reg [31: 0]  mdr_MEM,
     output reg          reg_wb_en,
     output reg [1: 0]   ctrl_wb_reg_src_MEM,
-    output reg [4: 0]   reg_wb_addr
+    output reg [4: 0]   reg_wb_addr_MEM
     );
     
     // 对数据寄存器的一个包装。在数据寄存器的基础上增加了 mmio
@@ -48,6 +48,6 @@ always@(posedge clk) begin
     reg_wb_en           <= ctrl_reg_write_EX;
     ctrl_wb_reg_src_MEM <= ctrl_wb_reg_src_EX;
     mdr_MEM             <= mdr;
-    reg_wb_addr         <= reg_wb_addr_EX;
+    reg_wb_addr_MEM     <= reg_wb_addr_EX;
 end
 endmodule

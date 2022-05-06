@@ -1,12 +1,12 @@
 module control (
      input [31:0] ir,
      output [2:0] control_branch,
-     output control_jump,
+     output control_jal,
+     output control_jalr,
      output control_mem_read,
      output control_mem_write,
      output [1:0] control_wb_reg_src,
      output [2:0] control_alu_op,
-     output control_pc_add_src,
      output control_alu_src1,
      output control_alu_src2,
      output control_reg_write);
@@ -27,10 +27,10 @@ wire is_addi   = (opcd == 7'b0010011);
 // control_branch[1]: ir[14]，用于区分使用 alu 的哪个标志位（a=b or a<b）
 // control_branch[0]: ir[12]，用于区分功能相反的跳转指令，例如 beq 和 bne
 assign control_branch     = {is_branch, ir[14], ir[12]};
-assign control_jump       = is_jal | is_jalr;                       // 跳转指令
+assign control_jal        = is_jal;
+assign control_jalr       = is_jalr;
 assign control_mem_read   = is_lw;                                  // 是否读数据主存
 assign control_mem_write  = is_sw;                                  // 是否写数据主存
-assign control_pc_add_src = is_jalr;                                // 是否 pc 从寄存器堆获取数据
 assign control_alu_src1   = is_auipc;                               // auipc, alu 需要 pc 和 imm 运算
 assign control_alu_src2   = is_auipc | is_addi | is_lw | is_sw;     // 立即数运算
 assign control_reg_write  = ~(is_branch | is_sw);                   // 是否写回寄存器

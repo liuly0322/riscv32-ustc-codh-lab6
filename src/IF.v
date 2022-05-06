@@ -2,7 +2,7 @@ module IF(
     input clk, stall_IF,
     input [31: 0] pc_nxt,
     input [31: 0] pc_nxt_EX,
-    input pc_branch_EX, pc_jump_EX,
+    input pc_change_EX,
     output reg [31: 0] ir_IF,
     output reg [31: 0] pc_IF,
     output [31: 0] pc_4_IF
@@ -23,7 +23,7 @@ end
 
 // pc(下一条被发射的指令) 应该是关于 pc_IF(当前流水线中发射出的指令) 的组合逻辑输出
 always @(*) begin
-    if (pc_branch_EX | pc_jump_EX)
+    if (pc_change_EX)
         pc = pc_nxt_EX;
     else
         pc = pc_nxt;
