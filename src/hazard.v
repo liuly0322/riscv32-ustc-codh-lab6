@@ -1,13 +1,13 @@
 module hazard(
            input rstn,
-           input pc_branch_EX, 
+           input pc_branch_EX,
            input pc_jump_EX,
-           input ctrl_mem_r_ID,
+           input load_use_hazard,
            output stall_IF,
            output flush_ID
        );
 
-assign stall_IF = ctrl_mem_r_ID;
-assign flush_ID = pc_branch_EX | pc_jump_EX | ctrl_mem_r_ID;
+assign stall_IF = load_use_hazard;
+assign flush_ID = pc_branch_EX | pc_jump_EX | load_use_hazard;
 
 endmodule

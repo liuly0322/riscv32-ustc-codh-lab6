@@ -1,5 +1,6 @@
 module EX(
     input clk,
+    input              predict_ID,
     input [2: 0]       ctrl_alu_op_ID,
     input              ctrl_alu_src1_ID,
     input              ctrl_alu_src2_ID,
@@ -16,6 +17,9 @@ module EX(
     input [1: 0]       ctrl_wb_reg_src_ID,
     input              ctrl_mem_r_ID,
     input              ctrl_mem_w_ID,
+    output record_we,                // 是否记录分支历史
+    output [4: 0] record_pc,         // 记录的 pc[6:2]
+    output record_data,              // 是否跳转
     output reg         ctrl_reg_write_EX,
     output reg [1: 0]  ctrl_wb_reg_src_EX,
     output reg         ctrl_mem_r_EX,
@@ -35,9 +39,20 @@ module EX(
     wire [2:  0] alu_f;
     alu alu32 (.a(alu_in1), .b(alu_in2), .s(ctrl_alu_op_ID), .y(alu_out), .f(alu_f));
 
-    assign pc_branch_EX = (ctrl_branch_ID[2] & (((ctrl_branch_ID[1] == 1)? alu_f[1] : alu_f[0]) ^ ctrl_branch_ID[0]));
+    wire is_branch     = ctrl_branch_ID[2];
+    wire should_branch = ((ctrl_branch_ID[1] == 1)? alu_f[1] : alu_f[0]) ^ ctrl_branch_ID[0];
+    assign pc_branch_EX = (is_branch & (should_branch ^ predict_ID));       // 当且仅当预测失败
     assign pc_jump_EX   = ctrl_jump_ID;
-    assign pc_nxt_EX    = (ctrl_pc_add_src_ID? rd1_ID: pc_ID) + imm_ID;
+    always @(*) begin
+        if (predict_ID && !should_branch)
+            pc_nxt_EX = pc_4_ID;
+        else
+            pc_nxt_EX = (ctrl_pc_add_src_ID? rd1_ID: pc_ID) + imm_ID;
+    end
+
+    assign record_pc   = pc_ID[6:2];
+    assign record_we   = is_branch;
+    assign record_data = should_branch;
 
     always @(posedge clk) begin
         alu_out_EX         <= alu_out;

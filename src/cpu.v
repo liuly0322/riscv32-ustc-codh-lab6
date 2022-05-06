@@ -57,21 +57,39 @@ wire [4: 0]  reg_wb_addr_ID;
 wire [4: 0]  reg_wb_addr_EX;
 wire [31: 0] reg_wb_data;
 wire [31: 0] alu_out;
+wire load_use_hazard;
 wire stall_IF;
 wire flush_ID;
+wire predict_ID;
+wire record_we;                // 是否记录分支历史
+wire [4: 0] record_pc;         // 记录的 pc[6:2]
+wire record_data;              // 是否跳转
+wire predict;
+wire [31: 0] pc_nxt;
+
+branch_predict u_branch_predict(
+	.clk           		( clk           		),
+	.record_chk_pc 		( pc_IF[6:2]     		),
+	.record_we     		( record_we     		),
+	.record_pc     		( record_pc     		),
+	.record_data   		( record_data   		),
+	.predict       		( predict       		)
+);
+
 
 hazard u_hazard(
-    .rstn               ( rstn          ),
-    .ctrl_mem_r_ID      ( ctrl_mem_r_ID ),
-    .pc_branch_EX       ( pc_branch_EX  ), 
-    .pc_jump_EX         ( pc_jump_EX    ),
-    .stall_IF           ( stall_IF      ),
-    .flush_ID           ( flush_ID      )
+    .rstn               ( rstn              ),
+    .load_use_hazard    ( load_use_hazard   ),
+    .pc_branch_EX       ( pc_branch_EX      ), 
+    .pc_jump_EX         ( pc_jump_EX        ),
+    .stall_IF           ( stall_IF          ),
+    .flush_ID           ( flush_ID          )
 );
 
 IF u_IF(
 	.clk          		( clk          		),
     .stall_IF           ( stall_IF          ),
+    .pc_nxt             ( pc_nxt            ),
 	.pc_nxt_EX    		( pc_nxt_EX    		),
 	.pc_branch_EX 		( pc_branch_EX 		),
 	.pc_jump_EX   		( pc_jump_EX   		),
@@ -84,6 +102,9 @@ wire [4:0] reg_addr_debug = chk_addr[4: 0];
 
 ID u_ID(
     .clk                ( clk               ),
+    .predict            ( predict           ),
+    .predict_ID         ( predict_ID        ),
+    .pc_nxt             ( pc_nxt            ),
     .flush_ID           ( flush_ID          ),
     .ctrl_reg_write_EX  ( ctrl_reg_write_EX ),
     .ctrl_wb_reg_src_EX ( ctrl_wb_reg_src_EX),
@@ -96,6 +117,7 @@ ID u_ID(
     .reg_wb_addr        ( reg_wb_addr       ),
     .reg_wb_data        ( reg_wb_data       ),
     .alu_out            ( alu_out           ),
+    .load_use_hazard    ( load_use_hazard   ),
     .mdr                ( mdr               ),
     .pc_IF              ( pc_IF             ),
     .pc_4_IF            ( pc_4_IF           ),
@@ -120,6 +142,10 @@ ID u_ID(
 
 EX u_EX(
     .clk                ( clk               ),
+    .predict_ID         ( predict_ID        ),
+    .record_we          ( record_we         ),
+    .record_pc          ( record_pc         ),
+    .record_data        ( record_data       ),
     .alu_out            ( alu_out           ),
     .ctrl_alu_op_ID     ( ctrl_alu_op_ID    ),
     .ctrl_alu_src1_ID   ( ctrl_alu_src1_ID  ),

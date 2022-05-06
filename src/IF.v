@@ -1,5 +1,6 @@
 module IF(
     input clk, stall_IF,
+    input [31: 0] pc_nxt,
     input [31: 0] pc_nxt_EX,
     input pc_branch_EX, pc_jump_EX,
     output reg [31: 0] ir_IF,
@@ -25,7 +26,7 @@ always @(*) begin
     if (pc_branch_EX | pc_jump_EX)
         pc = pc_nxt_EX;
     else
-        pc = pc_4_IF;
+        pc = pc_nxt;
 end
 
 endmodule
