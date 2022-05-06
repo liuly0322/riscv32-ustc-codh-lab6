@@ -21,7 +21,7 @@ always@(posedge clk) begin
     end
 end
 
-// pc(next) 是关于 pc_IF 的组合逻辑输出
+// pc(下一条被发射的指令) 应该是关于 pc_IF(当前流水线中发射出的指令) 的组合逻辑输出
 always @(*) begin
     if (pc_branch_EX | pc_jump_EX)
         pc = pc_nxt_EX;

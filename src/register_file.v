@@ -13,6 +13,7 @@ module register_file #(
      input we);
 
     reg [DW-1: 0] rf[0: (1<<AW)-1];
+    // 写优先的寄存器
     assign rd0 = (ra0 != 0) ? (((ra0 == wa) && we)? wd : rf[ra0]): 0;
     assign rd1 = (ra1 != 0) ? (((ra1 == wa) && we)? wd : rf[ra1]): 0;
     assign rd_debug = (ra_debug != 0)? (((ra_debug == wa) && we)? wd : rf[ra_debug]) : 0;

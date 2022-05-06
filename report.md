@@ -1,3 +1,13 @@
+## 指令集相关
+
+已经实现：
+
+- add, sub, addi
+- auipc
+- lw, sw
+- beq, bne, blt, bge
+- jal, jalr
+
 ## 排序测试
 
 ### 单周期（CPI = 1）

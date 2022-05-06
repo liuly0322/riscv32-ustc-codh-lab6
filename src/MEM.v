@@ -24,6 +24,7 @@ module MEM(
     output reg [4: 0]   reg_wb_addr
     );
     
+    // 对数据寄存器的一个包装。在数据寄存器的基础上增加了 mmio
     mem_wrapper data_mem (
                     .a(alu_out_EX),
                     .d(rd2_EX),

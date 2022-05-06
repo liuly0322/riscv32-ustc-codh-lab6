@@ -50,12 +50,14 @@ module ID(
     wire control_alu_src2;
     wire control_reg_write;
 
+    // ID 段组合逻辑计算下一个 IF 段取的地址
     assign pc_nxt = predict? pc_IF + imm_ext : pc_4_IF;
 
     control control_unit (.ir(ir_IF), .control_branch(control_branch), .control_jump(control_jump),.control_mem_read(control_mem_read),
                           .control_mem_write(control_mem_write), .control_wb_reg_src(control_wb_reg_src), .control_alu_op(control_alu_op), .control_pc_add_src(control_pc_add_src),
                           .control_alu_src1(control_alu_src1), .control_alu_src2(control_alu_src2), .control_reg_write(control_reg_write));
 
+    // 寄存器及相关端口
     wire [4:0]  rs2  = ir_IF[24:20];
     wire [4:0]  rs1  = ir_IF[19:15];
     wire [31:0] rd1, rd2;
@@ -63,9 +65,11 @@ module ID(
                             .rd0(rd1), .rd1(rd2), .wd(reg_wb_data), .we(reg_wb_en),
                             .ra_debug(reg_addr_debug), .rd_debug(reg_data_debug));
 
+    // 立即数拓展
     wire [31:0] imm_ext;
     imm_extend imm_extend_unit (.ir(ir_IF), .im_ext(imm_ext));
 
+    // rd1_forward, rd2_forward 用于处理数据相关，是实际交给 EX 段的寄存器读出数据
     reg [31:0] rd1_forward;
     always @(*) begin
         rd1_forward = rd1;
@@ -102,6 +106,7 @@ module ID(
                 rd2_forward = pc_4_ID;
         end 
     end
+    // 是否有 load 指令相关，交给 hazard 模块处理（产生一个周期气泡）
     assign load_use_hazard = ctrl_mem_r_ID && (reg_wb_addr_ID == rs2 || reg_wb_addr_ID == rs1);
 
     always @(posedge clk) begin

@@ -7,6 +7,7 @@ module WB(
     );
 
     always @(*) begin
+        // 具体可以见 control 模块的说明
         case (ctrl_wb_reg_src_MEM)
             2'b01:
                 reg_wb_data = mdr_MEM;

@@ -34,12 +34,16 @@ module EX(
     output reg         ctrl_mem_w_EX
     );
 
+    // alu 模块及 alu 模块的端口连接
     wire [31: 0] alu_in1 = ctrl_alu_src1_ID ? pc_ID : rd1_ID;
     wire [31: 0] alu_in2 = ctrl_alu_src2_ID ? imm_ID : rd2_ID;
     wire [2:  0] alu_f;
     alu alu32 (.a(alu_in1), .b(alu_in2), .s(ctrl_alu_op_ID), .y(alu_out), .f(alu_f));
 
+    // ctrl_branch 信号三位含义见 control 模块
+    // is_branch:     当前指令是否是跳转指令
     wire is_branch     = ctrl_branch_ID[2];
+    // should_branch: 当前跳转指令是否需要跳转
     wire should_branch = ((ctrl_branch_ID[1] == 1)? alu_f[1] : alu_f[0]) ^ ctrl_branch_ID[0];
     assign pc_branch_EX = (is_branch & (should_branch ^ predict_ID));       // 当且仅当预测失败
     assign pc_jump_EX   = ctrl_jump_ID;
