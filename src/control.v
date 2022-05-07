@@ -13,14 +13,14 @@ module control (
 
 wire [6:0] opcd = ir[6:0];
 
-wire is_lw     = (opcd == 7'b0000011);
-wire is_branch = (opcd == 7'b1100011);
-wire is_sw     = (opcd == 7'b0100011);
-wire is_jal    = (opcd == 7'b1101111);
-wire is_jalr   = (opcd == 7'b1100111);
-wire is_auipc  = (opcd == 7'b0010111);
-wire is_sub    = (opcd == 7'b0110011);
-wire is_addi   = (opcd == 7'b0010011);
+wire is_load    = (opcd == 7'b0000011);
+wire is_branch  = (opcd == 7'b1100011);
+wire is_store   = (opcd == 7'b0100011);
+wire is_jal     = (opcd == 7'b1101111);
+wire is_jalr    = (opcd == 7'b1100111);
+wire is_auipc   = (opcd == 7'b0010111);
+wire is_arith   = (opcd == 7'b0110011);
+wire is_arith_i = (opcd == 7'b0010011);
 
 // control_branch 信号
 // control_branch[2]: 当前是否是跳转指令
@@ -29,28 +29,28 @@ wire is_addi   = (opcd == 7'b0010011);
 assign control_branch     = {is_branch, ir[14], ir[12]};
 assign control_jal        = is_jal;
 assign control_jalr       = is_jalr;
-assign control_mem_read   = is_lw;                                  // 是否读数据主存
-assign control_mem_write  = is_sw;                                  // 是否写数据主存
-assign control_alu_src1   = is_auipc;                               // auipc, alu 需要 pc 和 imm 运算
-assign control_alu_src2   = is_auipc | is_addi | is_lw | is_sw;     // 立即数运算
-assign control_reg_write  = ~(is_branch | is_sw);                   // 是否写回寄存器
+assign control_mem_read   = is_load;
+assign control_mem_write  = is_store;
+assign control_alu_src1   = is_auipc;
+assign control_alu_src2   = is_auipc | is_arith_i | is_load | is_store;
+assign control_reg_write  = ~(is_branch | is_store);
 
 // 写回寄存器的数据来源：
 // 2'b00: 来源于 alu
-// 2'b01: 来源于访存
+// 2'b01: 来源于 mdr
 // 2'b10: 来源于 pc+4
 // 2'b11: 暂无
 reg [1:0] wb_signal;
 assign control_wb_reg_src = wb_signal;
 always@(*) begin
-    wb_signal = 0;                  // 默认 0, 用 alu 运算结果
-    if (is_lw) wb_signal = 2'b01;   // 访存
+    wb_signal = 0;                    // 默认 0, 用 alu 运算结果
+    if (is_load) wb_signal = 2'b01;   // 使用 mdr
     else if (is_jal | is_jalr) begin 
-        wb_signal = 2'b10;          // 用下一个 pc
+        wb_signal = 2'b10;            // 用下一个 pc
     end
 end
 
 // 当前仅支持处理加减法
-assign control_alu_op = ((is_sub & ir[30]) | is_branch)? 3'b0 : 3'b1;
+assign control_alu_op = ((is_arith & ir[30]) | is_branch)? 3'b0 : 3'b1;
 
 endmodule

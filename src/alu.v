@@ -5,13 +5,11 @@ module alu #(parameter WIDTH = 32)
      output reg [WIDTH - 1: 0] y, // 运算结果
      output reg [2:0] f);         // 标志
 
-    wire a_s, b_s;
-    assign a_s = ~a[WIDTH - 1];
-    assign b_s = ~b[WIDTH - 1];
+    wire a_s = a[WIDTH - 1];
+    wire b_s = b[WIDTH - 1];
+    wire y_s = y[WIDTH - 1];
 
     always @(*) begin
-        f = 3'b000;
-        y = 0;
         case (s)
             3'b000:
                 y = a - b;
@@ -30,10 +28,11 @@ module alu #(parameter WIDTH = 32)
             3'b111:
                 y = ($signed(a)) >>> b;       // signed
         endcase
-        if (s == 3'b000) begin
-            f[0] = (y == 0 ? 1'b1 :1'b0);
-            f[1] = {a_s, a} < {b_s, b} ? 1'b1 : 1'b0;
-            f[2] = (a < b ? 1'b1 :1'b0);
-        end
+    end
+
+    always @(*) begin
+        f[0] = (y == 0 ? 1'b1 :1'b0);
+        f[1] = (a_s & ~b_s) | (a_s & y_s) | (~b_s & y_s);
+        f[2] = (~a_s & b_s) | (~a_s & y_s) | (b_s & y_s);
     end
 endmodule
