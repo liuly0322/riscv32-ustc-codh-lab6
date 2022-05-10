@@ -2,8 +2,9 @@
 
 已经实现：
 
-- add, sub, addi
-- auipc
+- add, sub, and, or, sll, sra, srl, xor, slt, sltu
+- addi, andi, ori, slli, srai, srli, xori, slti, sltiu
+- auipc, lui
 - lw, sw
 - beq, bne, blt, bge
 - jal, jalr

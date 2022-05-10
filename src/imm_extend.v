@@ -10,6 +10,7 @@ wire is_lw     = (opcode == 7'b0000011);
 wire is_sw     = (opcode == 7'b0100011);
 wire is_jal    = (opcode == 7'b1101111);
 wire is_jalr   = (opcode == 7'b1100111);
+wire is_lui    = (opcode == 7'b0110111);
 wire is_auipc  = (opcode == 7'b0010111);
 wire is_addi   = (opcode == 7'b0010011);
 
@@ -27,6 +28,6 @@ always @(*) begin
     else if (is_sw)                im_ext = imm12_r;
     else if (is_branch)            im_ext = imm13_b;
     else if (is_jal)               im_ext = imm21_j;
-    else if (is_auipc)             im_ext = imm32_u;
+    else if (is_lui | is_auipc)    im_ext = imm32_u;
 end
 endmodule

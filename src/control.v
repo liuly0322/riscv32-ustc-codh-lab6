@@ -19,6 +19,7 @@ module control (
     wire is_store   = (opcd == 7'b0100011);
     wire is_jal     = (opcd == 7'b1101111);
     wire is_jalr    = (opcd == 7'b1100111);
+    wire is_lui     = (opcd == 7'b0110111);
     wire is_auipc   = (opcd == 7'b0010111);
     wire is_arith   = (opcd == 7'b0110011);
     wire is_arith_i = (opcd == 7'b0010011);
@@ -33,7 +34,7 @@ module control (
     assign control_mem_read   = is_load;
     assign control_mem_write  = is_store;
     assign control_alu_src1   = is_auipc;
-    assign control_alu_src2   = is_auipc | is_arith_i | is_load | is_store;
+    assign control_alu_src2   = is_auipc | is_arith_i | is_load | is_store | is_lui;
     assign control_reg_write  = ~(is_branch | is_store);
 
     // 写回寄存器的数据来源：
@@ -52,54 +53,47 @@ module control (
         end
     end
 
-    // 当前仅支持处理加减法
-    // 增加了R、I型指令
-    reg [3:0] ctrl_alu_op;
+    // R、I 型指令
+    reg [3: 0] ctrl_alu_op;
     always @(*) begin
-        ctrl_alu_op=4'b0;
-        if(is_branch)
-            ctrl_alu_op=4'b0;
-        else if((func3==3'b0)&&(is_arith||is_arith_i)) begin
-            //add,sub
-            if(ir[30])
-                ctrl_alu_op=4'b0;
-            else
-                ctrl_alu_op=4'b1;
+        ctrl_alu_op = 4'b0001;
+        if (is_branch)
+            ctrl_alu_op = 4'b0000;
+        else if (is_arith || is_arith_i) begin
+            case (func3)
+                3'b000: begin           // add(i), sub(i)
+                    if(is_arith & ir[30])
+                        ctrl_alu_op = 4'b0000;
+                    else
+                        ctrl_alu_op = 4'b0001;
+                end
+                3'b001: begin           // sll
+                    ctrl_alu_op = 4'b0110;
+                end
+                3'b010: begin           // slt(i)
+                    ctrl_alu_op = 4'b1000;
+                end
+                3'b011: begin           // sltu(i)
+                    ctrl_alu_op = 4'b1001;
+                end
+                3'b100: begin
+                    ctrl_alu_op = 4'b0100;
+                end
+                3'b101: begin           // srl(i) ,sra(i)
+                    if(ir[30])
+                        ctrl_alu_op = 4'b0111;
+                    else
+                        ctrl_alu_op = 4'b0101;
+                end
+                3'b110: begin           // or
+                    ctrl_alu_op = 4'b0011;
+                end
+                3'b111: begin           // and
+                    ctrl_alu_op = 4'b0010;
+                end
+            endcase
         end
-        else if((func3==3'b1)&&(is_arith||is_arith_i)) begin
-            //sll
-            ctrl_alu_op = 4'b110;
-        end
-        else if((func3==3'b010)&&(is_arith||is_arith_i)) begin
-            //slt
-            ctrl_alu_op = 4'b1000;
-        end
-        else if((func3==3'b011)&&(is_arith||is_arith_i)) begin
-            //sltu
-            ctrl_alu_op = 4'b1001;
-        end
-        else if((func3==3'b100)&&(is_arith||is_arith_i)) begin
-            //xor
-            ctrl_alu_op = 4'b100;
-        end
-        else if((func3==3'b101)&&(is_arith||is_arith_i)) begin
-            //srl,sra
-            if(ir[30])
-                ctrl_alu_op = 4'b101;//sra
-            else
-                ctrl_alu_op = 4'b111;//srl
-        end
-        else if((func3==3'b110)&&(is_arith||is_arith_i)) begin
-            //or
-            ctrl_alu_op=4'b011;
-        end
-        else if((func3==3'b111)&&(is_arith||is_arith_i)) begin
-            //and
-            ctrl_alu_op=4'b010;
-        end
-
     end
-    //assign control_alu_op = ((is_arith & ir[30]) | is_branch)? 3'b0 : 3'b1;
     assign control_alu_op = ctrl_alu_op;
 
 endmodule

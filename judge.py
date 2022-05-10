@@ -2,7 +2,7 @@ import subprocess
 
 while True:
     print("输入想要测试的 case 名，输入 quit 退出")
-    print("当前支持： sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch")
+    print("当前支持： sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri")
     try:
         s = input().strip()
     except:
