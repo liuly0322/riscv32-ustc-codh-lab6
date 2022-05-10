@@ -35,7 +35,7 @@ module  cpu (
     wire [31: 0]  rd1_ID;               // id/mem 段 rd1，已经过 forward 处理
     wire [31: 0]  rd2_ID;               // id/mem 段 rd2，已经过 forward 处理
     wire [31: 0]  imm_ID;               // id/mem 段 imm
-    wire [2: 0]   ctrl_branch_ID;
+    wire [3: 0]   ctrl_branch_ID;
     wire          ctrl_mem_r_ID;
     wire          ctrl_mem_w_ID;
     wire [1:0]    ctrl_wb_reg_src_ID;
@@ -235,7 +235,7 @@ module  cpu (
                 4'h3:
                     debug_data = ir_IF;
                 4'h4:
-                    debug_data = {12'h0, ctrl_alu_op_ID, ctrl_alu_src1_ID, ctrl_alu_src2_ID,
+                    debug_data = {11'h0, ctrl_alu_op_ID, ctrl_alu_src1_ID, ctrl_alu_src2_ID,
                                   ctrl_branch_ID, ctrl_jalr_ID, ctrl_mem_r_EX, ctrl_mem_w_EX,
                                   ctrl_reg_write_EX, ctrl_reg_write_ID, ctrl_wb_reg_src_EX,
                                   ctrl_wb_reg_src_ID, ctrl_wb_reg_src_MEM};

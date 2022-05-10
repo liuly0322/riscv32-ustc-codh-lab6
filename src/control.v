@@ -1,6 +1,6 @@
 module control (
         input [31:0] ir,
-        output [2:0] control_branch,
+        output [3:0] control_branch,
         output control_jal,
         output control_jalr,
         output control_mem_read,
@@ -25,10 +25,11 @@ module control (
     wire is_arith_i = (opcd == 7'b0010011);
 
     // control_branch 信号
-    // control_branch[2]: 当前是否是跳转指令
-    // control_branch[1]: ir[14]，用于区分使用 alu 的哪个标志位（a=b or a<b）
+    // control_branch[3]: 当前是否是跳转指令
+    // control_branch[2]: ir[14]，用于区分使用 alu 的哪个标志位（a=b or a<b）
+    // control_branch[1]: ir[13]，如果比较大小是否使用无符号数
     // control_branch[0]: ir[12]，用于区分功能相反的跳转指令，例如 beq 和 bne
-    assign control_branch     = {is_branch, ir[14], ir[12]};
+    assign control_branch     = {is_branch, ir[14: 12]};
     assign control_jal        = is_jal;
     assign control_jalr       = is_jalr;
     assign control_mem_read   = is_load;

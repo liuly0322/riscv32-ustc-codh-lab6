@@ -5,7 +5,7 @@ module EX(
         input              ctrl_alu_src1_ID,
         input              ctrl_alu_src2_ID,
         input              ctrl_jalr_ID,
-        input [2: 0]       ctrl_branch_ID,
+        input [3: 0]       ctrl_branch_ID,
         input [4: 0]       reg_wb_addr_ID,
         input [31: 0]      imm_ID,
         input [31: 0]      rd1_ID,
@@ -40,9 +40,9 @@ module EX(
 
     // ctrl_branch 信号三位含义见 control 模块
     // is_branch:     当前指令是否是跳转指令
-    wire is_branch     = ctrl_branch_ID[2];
+    wire is_branch     = ctrl_branch_ID[3];
     // should_branch: 当前跳转指令是否需要跳转
-    wire should_branch = ((ctrl_branch_ID[1] == 1)? alu_f[1] : alu_f[0]) ^ ctrl_branch_ID[0];
+    wire should_branch = ((ctrl_branch_ID[2] == 1)? ((ctrl_branch_ID[1] == 1)? alu_f[2]: alu_f[1]) : alu_f[0]) ^ ctrl_branch_ID[0];
     wire pc_branch_EX = (is_branch & (should_branch ^ predict_ID));       // 当且仅当预测失败
     wire pc_jump_EX   = ctrl_jalr_ID;
     assign pc_change_EX = pc_branch_EX | pc_jump_EX;

@@ -27,7 +27,7 @@ module ID(
     output reg [4: 0]  reg_wb_addr_ID, 
     output reg [31: 0] imm_ID,
     output reg predict_ID,
-    output reg [2: 0]  ctrl_branch_ID,
+    output reg [3: 0]  ctrl_branch_ID,
     output reg ctrl_jalr_ID,
     output reg ctrl_mem_r_ID,
     output reg ctrl_mem_w_ID,
@@ -39,7 +39,7 @@ module ID(
     output reg ctrl_reg_write_ID
     );
 
-    wire [2:0] control_branch;
+    wire [3:0] control_branch;
     wire control_jal, control_jalr;
     wire control_mem_read;
     wire control_mem_write;

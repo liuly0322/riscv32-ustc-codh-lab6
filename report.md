@@ -6,7 +6,7 @@
 - addi, andi, ori, slli, srai, srli, xori, slti, sltiu
 - auipc, lui
 - lw, sw
-- beq, bne, blt, bge
+- beq, bne, blt, bge, bltu, bgeu
 - jal, jalr
 
 ## 排序测试
