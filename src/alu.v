@@ -1,7 +1,7 @@
 module alu #(parameter WIDTH = 32)
     (input [WIDTH - 1: 0] a,
      input [WIDTH - 1: 0] b,      // 两操作数
-     input [2:0] s,               // 功能选择
+     input [3:0] s,               // 功能选择
      output reg [WIDTH - 1: 0] y, // 运算结果
      output reg [2:0] f);         // 标志
 
@@ -11,22 +11,28 @@ module alu #(parameter WIDTH = 32)
 
     always @(*) begin
         case (s)
-            3'b000:
+            4'b000:
                 y = a - b;
-            3'b001:
+            4'b001:
                 y = a + b;
-            3'b010:
+            4'b010:
                 y = a & b;
-            3'b011:
+            4'b011:
                 y = a | b;
-            3'b100:
+            4'b100:
                 y = a ^ b;
-            3'b101:
-                y = a >> b;
-            3'b110:
-                y = a << b;
-            3'b111:
+            4'b101:
+                y = $signed(a) >> b;
+            4'b110:
+                y = $signed(a) << b;
+            4'b111:
                 y = ($signed(a)) >>> b;       // signed
+            4'b1000:
+                y = ( $signed(a) < $signed(b) )? 1 : 0;
+            4'b1001:
+                y = (a < b)? 1 : 0;
+            default:
+                y = a + b;
         endcase
     end
 

@@ -1,35 +1,35 @@
 module EX(
-    input clk,
-    input              predict_ID,
-    input [2: 0]       ctrl_alu_op_ID,
-    input              ctrl_alu_src1_ID,
-    input              ctrl_alu_src2_ID,
-    input              ctrl_jalr_ID,
-    input [2: 0]       ctrl_branch_ID,
-    input [4: 0]       reg_wb_addr_ID,
-    input [31: 0]      imm_ID,
-    input [31: 0]      rd1_ID,
-    input [31: 0]      pc_ID,
-    input [31: 0]      pc_4_ID,
-    input [31: 0]      rd2_ID,
-    input              ctrl_reg_write_ID,
-    input [1: 0]       ctrl_wb_reg_src_ID,
-    input              ctrl_mem_r_ID,
-    input              ctrl_mem_w_ID,
-    output             record_we,           // 是否记录分支历史
-    output [4: 0]      record_pc,           // 记录的 pc[6:2]
-    output             record_data,         // 是否跳转
-    output reg         ctrl_reg_write_EX,
-    output reg [1: 0]  ctrl_wb_reg_src_EX,
-    output reg         ctrl_mem_r_EX,
-    output [31: 0]     alu_out,
-    output reg [31: 0] alu_out_EX,
-    output             pc_change_EX,
-    output [31:0]      pc_nxt_EX,
-    output reg [31: 0] rd2_EX,
-    output reg [31: 0] pc_4_EX,
-    output reg [4: 0]  reg_wb_addr_EX,
-    output reg         ctrl_mem_w_EX
+        input clk,
+        input              predict_ID,
+        input [3: 0]       ctrl_alu_op_ID,
+        input              ctrl_alu_src1_ID,
+        input              ctrl_alu_src2_ID,
+        input              ctrl_jalr_ID,
+        input [2: 0]       ctrl_branch_ID,
+        input [4: 0]       reg_wb_addr_ID,
+        input [31: 0]      imm_ID,
+        input [31: 0]      rd1_ID,
+        input [31: 0]      pc_ID,
+        input [31: 0]      pc_4_ID,
+        input [31: 0]      rd2_ID,
+        input              ctrl_reg_write_ID,
+        input [1: 0]       ctrl_wb_reg_src_ID,
+        input              ctrl_mem_r_ID,
+        input              ctrl_mem_w_ID,
+        output             record_we,           // 是否记录分支历史
+        output [4: 0]      record_pc,           // 记录的 pc[6:2]
+        output             record_data,         // 是否跳转
+        output reg         ctrl_reg_write_EX,
+        output reg [1: 0]  ctrl_wb_reg_src_EX,
+        output reg         ctrl_mem_r_EX,
+        output [31: 0]     alu_out,
+        output reg [31: 0] alu_out_EX,
+        output             pc_change_EX,
+        output [31:0]      pc_nxt_EX,
+        output reg [31: 0] rd2_EX,
+        output reg [31: 0] pc_4_EX,
+        output reg [4: 0]  reg_wb_addr_EX,
+        output reg         ctrl_mem_w_EX
     );
 
     // alu 模块及 alu 模块的端口连接

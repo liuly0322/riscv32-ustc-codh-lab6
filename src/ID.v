@@ -32,7 +32,8 @@ module ID(
     output reg ctrl_mem_r_ID,
     output reg ctrl_mem_w_ID,
     output reg [1:0] ctrl_wb_reg_src_ID,
-    output reg [2:0] ctrl_alu_op_ID,
+    output reg [3:0] ctrl_alu_op_ID
+,
     output reg ctrl_alu_src1_ID,
     output reg ctrl_alu_src2_ID,
     output reg ctrl_reg_write_ID
@@ -43,7 +44,7 @@ module ID(
     wire control_mem_read;
     wire control_mem_write;
     wire [1:0] control_wb_reg_src;
-    wire [2:0] control_alu_op;
+    wire [3:0] control_alu_op;
     wire control_alu_src1;
     wire control_alu_src2;
     wire control_reg_write;
