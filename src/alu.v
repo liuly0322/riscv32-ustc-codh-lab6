@@ -2,10 +2,10 @@ module alu #(
         parameter AW = 5,
         parameter DW = 32)
     (input [DW - 1: 0] a,
-     input [DW - 1: 0] b,      // 两操作数
+     input [DW - 1: 0] b,       // 两操作数
      input [3: 0] s,            // 功能选择
-     output reg [DW - 1: 0] y, // 运算结果
-     output reg [2:0] f);      // 标志
+     output reg [DW - 1: 0] y,  // 运算结果
+     output [2: 0] f);          // 标志
 
     // 大小判断
     wire [DW - 1: 0] a_minus_b = a - b;
