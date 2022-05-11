@@ -25,7 +25,7 @@ module EX(
         output [31: 0]     alu_out,
         output reg [31: 0] alu_out_EX,
         output             pc_change_EX,
-        output [31:0]      pc_nxt_EX,
+        output reg [31: 0] pc_nxt_EX,
         output reg [31: 0] rd2_EX,
         output reg [31: 0] pc_4_EX,
         output reg [4: 0]  reg_wb_addr_EX,
