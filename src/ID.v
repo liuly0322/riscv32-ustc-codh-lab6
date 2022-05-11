@@ -39,6 +39,7 @@ module ID(
     output reg ctrl_reg_write_ID
     );
 
+    wire [31:0] imm_ext;
     wire [3:0] control_branch;
     wire control_jal, control_jalr;
     wire control_mem_read;
@@ -65,7 +66,6 @@ module ID(
                             .ra_debug(reg_addr_debug), .rd_debug(reg_data_debug));
 
     // 立即数拓展
-    wire [31:0] imm_ext;
     imm_extend imm_extend_unit (.ir(ir_IF), .im_ext(imm_ext));
 
     // rd1_forward, rd2_forward 用于处理数据相关，是实际交给 EX 段的寄存器读出数据
