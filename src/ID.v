@@ -59,7 +59,7 @@ module ID(
 
     // 寄存器及相关端口
     wire [4:0]  rs2  = ir_IF[24:20];
-    wire [4:0]  rs1  = (ir_IF[6:0] == 7'b0110111)? 0 :ir_IF[19:15];         // lui
+    wire [4:0]  rs1  = ir_IF[19:15];
     wire [31:0] rd1, rd2;
     register_file register (.clk(clk), .ra0(rs1), .ra1(rs2), .wa(reg_wb_addr_MEM),
                             .rd0(rd1), .rd1(rd2), .wd(reg_wb_data), .we(reg_wb_en),

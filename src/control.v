@@ -48,7 +48,7 @@ module control (
     always@(*) begin
         wb_signal = 0;                    // 默认 0, 用 alu 运算结果
         if (is_load)
-            wb_signal = 2'b01;   // 使用 mdr
+            wb_signal = 2'b01;            // 使用 mdr
         else if (is_jal | is_jalr) begin
             wb_signal = 2'b10;            // 用下一个 pc
         end
@@ -57,15 +57,15 @@ module control (
     // R、I 型指令
     reg [3: 0] ctrl_alu_op;
     always @(*) begin
-        ctrl_alu_op = 4'b0001;
+        ctrl_alu_op = 4'b0000;
         if (is_branch)
-            ctrl_alu_op = 4'b0000;
+            ctrl_alu_op = 4'b0001;
+        else if (is_lui)
+            ctrl_alu_op = 4'b1010;
         else if (is_arith || is_arith_i) begin
             case (func3)
                 3'b000: begin           // add(i), sub(i)
                     if(is_arith & ir[30])
-                        ctrl_alu_op = 4'b0000;
-                    else
                         ctrl_alu_op = 4'b0001;
                 end
                 3'b001: begin           // sll
@@ -77,7 +77,7 @@ module control (
                 3'b011: begin           // sltu(i)
                     ctrl_alu_op = 4'b1001;
                 end
-                3'b100: begin
+                3'b100: begin           // xor(i)
                     ctrl_alu_op = 4'b0100;
                 end
                 3'b101: begin           // srl(i) ,sra(i)

@@ -24,7 +24,7 @@ module alu #(
     always @(*) begin
         case (s)
             4'b0001:
-                y = a + b;
+                y = a_minus_b;
             4'b0010:
                 y = a & b;
             4'b0011:
@@ -41,8 +41,10 @@ module alu #(
                 y = {31'b0, f[1]};
             4'b1001:
                 y = {31'b0, f[2]};
+            4'b1010:
+                y = b;
             default:
-                y = a_minus_b;
+                y = a + b;
         endcase
     end
 
