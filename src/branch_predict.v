@@ -8,15 +8,18 @@ module branch_predict(
 );
 
 // 饱和计数器
-reg [1:0] record[0: 31];
-assign predict = record[record_chk_pc][1];
+reg [1:0] record[0: 255];
+// 分支历史
+reg [2:0] history[0: 31];
+assign predict = record[{record_chk_pc, history[record_chk_pc]}][1];
 
 always @(posedge clk) begin
     if (record_we) begin
-        if (record_data && record[record_pc] != 2'b11)
-            record[record_pc] <= record[record_pc] + 1;
-        else if (!record_data && record[record_pc] != 2'b00)
-            record[record_pc] <= record[record_pc] - 1;
+        history[record_pc] <= {history[record_pc][1:0], record_data};
+        if (record_data && record[{record_pc, history[record_pc]}] != 2'b11)
+            record[{record_pc, history[record_pc]}] <= record[{record_pc, history[record_pc]}] + 1;
+        else if (!record_data && record[{record_pc, history[record_pc]}] != 2'b00)
+            record[{record_pc, history[record_pc]}] <= record[{record_pc, history[record_pc]}] - 1;
     end
 end
 
