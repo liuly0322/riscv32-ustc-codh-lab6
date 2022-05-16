@@ -2,6 +2,8 @@
 
 USTC CODH 课程的综合实验 lab6
 
+使用实体板：xc7a100tcsg324-1
+
 本实验为小组合作实验，组员主页：
 
 - <https://github.com/liuly0322>

@@ -1,0 +1,126 @@
+
+sort.o:     file format elf32-littleriscv
+
+
+Disassembly of section .data:
+
+00000000 <state>:
+   0:	0001                	c.addi	x0,0
+   2:	0000                	c.unimp
+   4:	0000                	c.unimp
+   6:	0000                	c.unimp
+   8:	0000                	c.unimp
+   a:	0000                	c.unimp
+   c:	0000                	c.unimp
+   e:	0000                	c.unimp
+  10:	0000                	c.unimp
+  12:	0000                	c.unimp
+  14:	0000                	c.unimp
+  16:	0000                	c.unimp
+  18:	0000                	c.unimp
+  1a:	0000                	c.unimp
+  1c:	0000                	c.unimp
+  1e:	0000                	c.unimp
+  20:	0000                	c.unimp
+  22:	0000                	c.unimp
+  24:	0000                	c.unimp
+  26:	0000                	c.unimp
+
+Disassembly of section .text.startup:
+
+00003000 <main>:
+    3000:	00000693          	addi	x13,x0,0
+    3004:	00068793          	addi	x15,x13,0
+    3008:	02400713          	addi	x14,x0,36
+    300c:	0007a023          	sw	x0,0(x15)
+    3010:	00478793          	addi	x15,x15,4
+    3014:	fee79ce3          	bne	x15,x14,300c <main+0xc>
+    3018:	00300793          	addi	x15,x0,3
+    301c:	02f6a223          	sw	x15,36(x13)
+    3020:	00300593          	addi	x11,x0,3
+    3024:	00000813          	addi	x16,x0,0
+    3028:	00100713          	addi	x14,x0,1
+    302c:	00300613          	addi	x12,x0,3
+    3030:	00010537          	lui	x10,0x10
+    3034:	00010e37          	lui	x28,0x10
+    3038:	00800313          	addi	x6,x0,8
+    303c:	00900e93          	addi	x29,x0,9
+    3040:	06c59863          	bne	x11,x12,30b0 <main+0xb0>
+    3044:	f1052783          	lw	x15,-240(x10) # ff10 <main+0xcf10>
+    3048:	fe078ce3          	beq	x15,x0,3040 <main+0x40>
+    304c:	f14e2783          	lw	x15,-236(x28) # ff14 <main+0xcf14>
+    3050:	fff78793          	addi	x15,x15,-1
+    3054:	fef366e3          	bltu	x6,x15,3040 <main+0x40>
+    3058:	00279793          	slli	x15,x15,0x2
+    305c:	00f687b3          	add	x15,x13,x15
+    3060:	0007a883          	lw	x17,0(x15)
+    3064:	fc089ee3          	bne	x17,x0,3040 <main+0x40>
+    3068:	00e7a023          	sw	x14,0(x15)
+    306c:	0006a783          	lw	x15,0(x13)
+    3070:	00180813          	addi	x16,x16,1
+    3074:	06f70063          	beq	x14,x15,30d4 <main+0xd4>
+    3078:	00c6a583          	lw	x11,12(x13)
+    307c:	06b70663          	beq	x14,x11,30e8 <main+0xe8>
+    3080:	0186a883          	lw	x17,24(x13)
+    3084:	03170863          	beq	x14,x17,30b4 <main+0xb4>
+    3088:	06f70a63          	beq	x14,x15,30fc <main+0xfc>
+    308c:	0046a583          	lw	x11,4(x13)
+    3090:	06b70c63          	beq	x14,x11,3108 <main+0x108>
+    3094:	0086a583          	lw	x11,8(x13)
+    3098:	08b70263          	beq	x14,x11,311c <main+0x11c>
+    309c:	0af70663          	beq	x14,x15,3148 <main+0x148>
+    30a0:	09d80c63          	beq	x16,x29,3138 <main+0x138>
+    30a4:	0246a583          	lw	x11,36(x13)
+    30a8:	40e60733          	sub	x14,x12,x14
+    30ac:	f8c58ce3          	beq	x11,x12,3044 <main+0x44>
+    30b0:	0000006f          	jal	x0,30b0 <main+0xb0>
+    30b4:	01c6af03          	lw	x30,28(x13)
+    30b8:	fde718e3          	bne	x14,x30,3088 <main+0x88>
+    30bc:	0206af03          	lw	x30,32(x13)
+    30c0:	fde714e3          	bne	x14,x30,3088 <main+0x88>
+    30c4:	02e6a223          	sw	x14,36(x13)
+    30c8:	00070593          	addi	x11,x14,0
+    30cc:	40e60733          	sub	x14,x12,x14
+    30d0:	fddff06f          	jal	x0,30ac <main+0xac>
+    30d4:	0046a583          	lw	x11,4(x13)
+    30d8:	fab710e3          	bne	x14,x11,3078 <main+0x78>
+    30dc:	0086a583          	lw	x11,8(x13)
+    30e0:	f8b71ce3          	bne	x14,x11,3078 <main+0x78>
+    30e4:	fe1ff06f          	jal	x0,30c4 <main+0xc4>
+    30e8:	0106a883          	lw	x17,16(x13)
+    30ec:	f9171ae3          	bne	x14,x17,3080 <main+0x80>
+    30f0:	0146a883          	lw	x17,20(x13)
+    30f4:	f91716e3          	bne	x14,x17,3080 <main+0x80>
+    30f8:	fcdff06f          	jal	x0,30c4 <main+0xc4>
+    30fc:	f8b718e3          	bne	x14,x11,308c <main+0x8c>
+    3100:	f91716e3          	bne	x14,x17,308c <main+0x8c>
+    3104:	fc1ff06f          	jal	x0,30c4 <main+0xc4>
+    3108:	0106a583          	lw	x11,16(x13)
+    310c:	f8b714e3          	bne	x14,x11,3094 <main+0x94>
+    3110:	01c6a583          	lw	x11,28(x13)
+    3114:	f8b710e3          	bne	x14,x11,3094 <main+0x94>
+    3118:	fadff06f          	jal	x0,30c4 <main+0xc4>
+    311c:	0146af03          	lw	x30,20(x13)
+    3120:	05e70263          	beq	x14,x30,3164 <main+0x164>
+    3124:	04f70663          	beq	x14,x15,3170 <main+0x170>
+    3128:	0106a783          	lw	x15,16(x13)
+    312c:	f6f71ae3          	bne	x14,x15,30a0 <main+0xa0>
+    3130:	f9170ae3          	beq	x14,x17,30c4 <main+0xc4>
+    3134:	f7d818e3          	bne	x16,x29,30a4 <main+0xa4>
+    3138:	02002223          	sw	x0,36(x0) # 24 <state+0x24>
+    313c:	00000593          	addi	x11,x0,0
+    3140:	40e60733          	sub	x14,x12,x14
+    3144:	f69ff06f          	jal	x0,30ac <main+0xac>
+    3148:	0106a783          	lw	x15,16(x13)
+    314c:	f4f71ae3          	bne	x14,x15,30a0 <main+0xa0>
+    3150:	0206a783          	lw	x15,32(x13)
+    3154:	f6f708e3          	beq	x14,x15,30c4 <main+0xc4>
+    3158:	f4b714e3          	bne	x14,x11,30a0 <main+0xa0>
+    315c:	fd171ce3          	bne	x14,x17,3134 <main+0x134>
+    3160:	f65ff06f          	jal	x0,30c4 <main+0xc4>
+    3164:	0206af03          	lw	x30,32(x13)
+    3168:	f5e70ee3          	beq	x14,x30,30c4 <main+0xc4>
+    316c:	faf71ee3          	bne	x14,x15,3128 <main+0x128>
+    3170:	0106a783          	lw	x15,16(x13)
+    3174:	faf71ae3          	bne	x14,x15,3128 <main+0x128>
+    3178:	fd9ff06f          	jal	x0,3150 <main+0x150>
