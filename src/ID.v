@@ -32,8 +32,7 @@ module ID(
     output reg ctrl_mem_r_ID,
     output reg ctrl_mem_w_ID,
     output reg [1:0] ctrl_wb_reg_src_ID,
-    output reg [3:0] ctrl_alu_op_ID
-,
+    output reg [3:0] ctrl_alu_op_ID,
     output reg ctrl_alu_src1_ID,
     output reg ctrl_alu_src2_ID,
     output reg ctrl_reg_write_ID
@@ -51,7 +50,7 @@ module ID(
     wire control_reg_write;
 
     // ID 段组合逻辑计算下一个 IF 段取的地址
-    assign pc_nxt = (predict | control_jal)? pc_IF + imm_ext : pc_4_IF;
+    assign pc_nxt = ((control_branch[3] & predict) | control_jal)? pc_IF + imm_ext : pc_4_IF;
 
     control control_unit (.ir(ir_IF), .control_branch(control_branch), .control_jal(control_jal), .control_jalr(control_jalr), .control_mem_read(control_mem_read),
                           .control_mem_write(control_mem_write), .control_wb_reg_src(control_wb_reg_src), .control_alu_op(control_alu_op),

@@ -7,12 +7,16 @@ module  cpu (
         output [31:0]  io_dout,	// 向外设输出的数据
         output  io_we,		    // 向外设输出数据时的写使能信号
         output  io_rd,		    // 从外设输入数据时的读使能信号
-        input [31:0]  io_din,	    // 来自外设输入的数据
+        input [31:0]  io_din,	// 来自外设输入的数据
 
         // Debug_BUS
         output [31:0] pc,      	// 当前执行指令地址
-        input [15:0] chk_addr,	// 数据通路状态的编码地址
-        output [31:0] chk_data  // 数据通路状态的数据
+        input  [15:0] chk_addr,	// 寄存器地址
+        output [31:0] chk_data, // 读取寄存器数据
+
+        // VGA_BUS
+        input  [9:0]  vga_addr, // vga 访问的数据存储器地址
+        output [31:0] vga_data  // vga 得到的值
     );
 
     // 变量命名约定：对于段间寄存器，统一取前一段作为命名后缀
@@ -64,7 +68,6 @@ module  cpu (
     wire          ctrl_mem_w_EX;
 
     // mem 段
-    wire [31: 0]  mem_data_debug;
     wire [31: 0]  pc_4_MEM;
     wire [31: 0]  alu_out_MEM;
     wire [31: 0]  mdr;                  // 直接连接内存读出数据端口（forward 用）
@@ -78,6 +81,7 @@ module  cpu (
 
     branch_predict u_branch_predict(
                        .clk           		( clk           		),
+                       .rstn                ( rstn                  ),
                        .record_chk_pc 		( pc_IF[6:2]     		),
                        .record_we     		( record_we     		),
                        .record_pc     		( record_pc     		),
@@ -96,8 +100,9 @@ module  cpu (
 
     IF u_IF(
            .clk          		( clk          		),
-           .stall_IF           ( stall_IF          ),
-           .pc_nxt             ( pc_nxt            ),
+           .rstn                ( rstn              ),
+           .stall_IF            ( stall_IF          ),
+           .pc_nxt              ( pc_nxt            ),
            .pc_nxt_EX    		( pc_nxt_EX    		),
            .pc_change_EX 		( pc_change_EX 		),
            .ir_IF        		( ir_IF        		),
@@ -112,7 +117,7 @@ module  cpu (
            .predict            ( predict           ),
            .predict_ID         ( predict_ID        ),
            .pc_nxt             ( pc_nxt            ),
-           .flush_ID           ( flush_ID          ),
+           .flush_ID           ( flush_ID | ~rstn  ),
            .ctrl_reg_write_EX  ( ctrl_reg_write_EX ),
            .ctrl_wb_reg_src_EX ( ctrl_wb_reg_src_EX),
            .alu_out_EX         ( alu_out_EX        ),
@@ -148,6 +153,7 @@ module  cpu (
 
     EX u_EX(
            .clk                ( clk               ),
+           .rstn               ( rstn              ),
            .predict_ID         ( predict_ID        ),
            .record_we          ( record_we         ),
            .record_pc          ( record_pc         ),
@@ -180,17 +186,16 @@ module  cpu (
            .ctrl_mem_w_EX      ( ctrl_mem_w_EX     )
        );
 
-    wire [9: 0] mem_addr_debug = chk_addr[9:0];
-
     MEM u_MEM(
-            .mem_addr_debug     ( mem_addr_debug    ),
+            .mem_addr_debug     ( vga_addr          ),
             .io_din             ( io_din            ),
-            .mem_data_debug     ( mem_data_debug    ),
+            .mem_data_debug     ( vga_data          ),
             .io_addr            ( io_addr           ),
             .io_dout            ( io_dout           ),
             .io_we              ( io_we             ),
             .io_rd              ( io_rd             ),
             .clk                ( clk               ),
+            .rstn               ( rstn              ),
             .pc_4_EX            ( pc_4_EX           ),
             .alu_out_EX         ( alu_out_EX        ),
             .rd2_EX             ( rd2_EX            ),
@@ -223,41 +228,8 @@ module  cpu (
         if (chk_addr[15:12] == 1) begin        // 查看寄存器值
             debug_data = reg_data_debug;
         end
-        else if (chk_addr[15:12] == 2) begin   // 数据主存
-            debug_data = mem_data_debug;
-        end
-        else begin                             // 查看 pcs
-            case (chk_addr[3:0])
-                4'h1:
-                    debug_data = pc_IF;
-                4'h2:
-                    debug_data = pc_ID;
-                4'h3:
-                    debug_data = ir_IF;
-                4'h4:
-                    debug_data = {11'h0, ctrl_alu_op_ID, ctrl_alu_src1_ID, ctrl_alu_src2_ID,
-                                  ctrl_branch_ID, ctrl_jalr_ID, ctrl_mem_r_EX, ctrl_mem_w_EX,
-                                  ctrl_reg_write_EX, ctrl_reg_write_ID, ctrl_wb_reg_src_EX,
-                                  ctrl_wb_reg_src_ID, ctrl_wb_reg_src_MEM};
-                4'h5:
-                    debug_data = pc_4_EX;
-                4'h6:
-                    debug_data = alu_out_EX;
-                4'h7:
-                    debug_data = rd2_EX;
-                4'h8:
-                    debug_data = imm_ID;
-                4'ha:
-                    debug_data = alu_out_MEM;
-                4'hb:
-                    debug_data = mdr_MEM;
-                4'hc:
-                    debug_data = {31'h0, reg_wb_en};
-                4'hd:
-                    debug_data = reg_wb_data;
-                default:
-                    debug_data = pc_nxt_EX;
-            endcase
+        else begin
+            debug_data = 0;
         end
     end
 

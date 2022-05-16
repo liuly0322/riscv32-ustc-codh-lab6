@@ -47,11 +47,11 @@ int main(int argc, char** argv) {
     while (!Verilated::gotFinish() && main_time < sim_time) {
         // 循环读取内存值
         int i = main_time % 16;
-        top->chk_addr = 0x2000 + i * 4;
+        top->vga_addr = i * 4;
         top->clk = !top->clk;
         top->eval();           // 仿真时间步进
         tfp->dump(main_time);  // 波形文件写入步进
-        unsigned mem_val = (unsigned)(top->chk_data);
+        unsigned mem_val = (unsigned)(top->vga_data);
         if (mem_val == data[i]) {
             sorted_cnt++;
             if (sorted_cnt == 16) {
