@@ -198,11 +198,16 @@ module vga_driver (input clk,                  // 系统 50MHz 时钟
     wire [9:0] diff_x = (x > x_center)? (x - x_center): (x_center - x);
     wire [9:0] diff_y = (y > y_center)? (y - y_center): (y_center - y);
     wire [9:0] diff_xy = (diff_x > diff_y)? (diff_x - diff_y): (diff_y - diff_x);
-    wire [13:0] product = diff_x * diff_x + diff_y * diff_y;
+    wire [15:0] product = diff_x * diff_x + diff_y * diff_y;
 
-    // 划分 index 区域
+    // 是否处在方格区域
+    wire index_valid    = (R_h_cnt < (C_H_SYNC_PULSE + C_H_BACK_PORCH + C_TIC_SIZE * 3));
+    wire [3:0] mem_addr = {1'b0, x_index} + {x_index, 1'b0} + {1'b0, y_index};
+    assign vga_addr     = index_valid? {4'b0, mem_addr, 2'b0}: 10'h24;
+
+    // 划分方格区域
     always @(posedge clk) begin
-        if (W_active_flag) begin
+        if (W_active_flag && index_valid) begin
             if (R_h_cnt < (C_H_SYNC_PULSE + C_H_BACK_PORCH + C_TIC_SIZE)) begin
                 x_index <= 0;
                 x_center <= C_H_SYNC_PULSE + C_H_BACK_PORCH + C_TIC_SIZE / 2;
@@ -229,15 +234,13 @@ module vga_driver (input clk,                  // 系统 50MHz 时钟
             end
         end
         else begin
-            x_index <= 0;
-            y_index <= 0;
+            x_index  <= 3;
+            x_center <= C_H_SYNC_PULSE + C_H_BACK_PORCH + C_TIC_SIZE * 3 + C_TIC_SIZE / 2;
+            y_index  <= 0;
+            y_center <= C_V_SYNC_PULSE + C_V_BACK_PORCH + C_TIC_SIZE + C_TIC_SIZE / 2;
         end
     end
 
-    // 是否处在方格区域
-    wire index_valid    = (R_h_cnt < (C_H_SYNC_PULSE + C_H_BACK_PORCH + C_TIC_SIZE * 3));
-    wire [3:0] mem_addr = {1'b0, x_index} + {x_index, 1'b0} + {1'b0, y_index};
-    assign vga_addr     = index_valid? {4'b0, mem_addr, 2'b0}: 10'h24;
 
     // 输出（是 1111 还是 0000）
     reg [3:0] data;
@@ -250,6 +253,7 @@ module vga_driver (input clk,                  // 系统 50MHz 时钟
             data = 0;
         end
         else begin
+            // 如果在 9 * 9
             if (index_valid) begin
                 // 过远，使用边框
                 if (diff_x > 75 || diff_y > 75)
@@ -273,14 +277,30 @@ module vga_driver (input clk,                  // 系统 50MHz 时钟
                     endcase
                 end
             end
+            // 如果在右侧胜负提示
             else begin
-                // 显示胜负情况
-                // 2'b00: 无
-                // 2'b01: 圈胜出
-                // 2'b10: 叉胜出
-                // 2'b11: 未结束
-                // to be done
-                data = 0;
+                case (vga_data[1:0])
+                    2'b01: begin        // 圈
+                        if (product > 3600 && product < 4900)
+                            data = 4'hf;
+                        else
+                            data = 0;
+                    end
+                    2'b10: begin        // 叉
+                        if (diff_xy < 5 && product < 4900)
+                            data = 4'hf;
+                        else
+                            data = 0;
+                    end
+                    2'b00: begin        // 平局
+                        if ((product > 3600 || diff_xy < 5) && product < 4900)
+                            data = 4'hf;
+                        else
+                            data = 0;
+                    end
+                    default:            // 空
+                        data = 0;
+                endcase
             end
         end
     end
