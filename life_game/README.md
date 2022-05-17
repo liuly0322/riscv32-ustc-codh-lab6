@@ -31,3 +31,4 @@ v0.2 版本默认是以上的图案，初始 data.coe 如下
 00000410
 ```
 
+演示视频：<http://home.ustc.edu.cn/~liuly0322/videos/life_game.mp4>

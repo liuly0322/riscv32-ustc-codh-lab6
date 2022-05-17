@@ -6,4 +6,6 @@
 
 v0.1 版本支持了井字棋游戏的基本功能
 
-v0.2 版本预计增添胜负判断
+v0.2 版本支持显示胜负
+
+演示视频：<http://home.ustc.edu.cn/~liuly0322/videos/tic_tac_toe.mp4>
