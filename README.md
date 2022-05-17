@@ -35,3 +35,7 @@ USTC CODH 课程的综合实验 lab6
 ## VGA 应用程序
 
 作为示例，本项目运行了两个应用程序，分别是井字棋和生命游戏。具体说明见 `life_game` 和 `tic_tac_toe` 文件夹
+
+本项目得到了中国科学技术大学 Vlab 实验平台的帮助与支持。
+
+This project is accomplished with the help of Vlab Platform of University of Science and Technology of China.
