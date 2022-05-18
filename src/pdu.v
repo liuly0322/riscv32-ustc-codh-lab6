@@ -37,7 +37,6 @@ module  pdu(
     wire rst;               // 复位信号，高电平有效
     wire clk_pdu;           // PDU工作时钟
     wire clk_db;            // 去抖动计数器时钟
-    reg stop_r, stop_n;
 
     reg [19:0] cnt_clk_r;   // 时钟分频、数码管刷新计数器
     reg [4:0] cnt_sw_db_r;
@@ -51,7 +50,6 @@ module  pdu(
     reg [4:0] btn_db_r, btn_db_1r;
     wire step_p, cont_p, chk_p, data_p, del_p;
 
-    reg [15:0] led_data_r;  // 指示灯led15-0数据
     reg [31:0] seg_data_r;  // 数码管输出数据
     reg seg_rdy_r;          // 数码管准备好标志
     reg [31:0] swx_data_r;  // 开关输入数据
@@ -59,27 +57,25 @@ module  pdu(
     reg [31:0] cnt_data_r;  // 性能计数器数据
 
     reg [31:0] tmp_r;       // 临时编辑数据
-    reg [31:0] brk_addr_r;  // 断点地址
     reg [15:0] chk_addr_r;  // 查看地址
     reg [31:0] io_din_t;
 
-    reg led_sel_r;
     reg [2:0] seg_sel_r;
     reg [31:0] disp_data_t;
     reg [7:0] an_t;
     reg [3:0] hd_t;
     reg [6:0] seg_t;
 
-    assign rst = rstn_r[15];    // 经处理后的复位信号，高电平有效
+    assign rst = rstn_r[15];            // 经处理后的复位信号，高电平有效
     assign rst_cpu = rst;
     assign clk_pdu = cnt_clk_r[1];      // PDU工作时钟25MHz
     assign clk_db = cnt_clk_r[16];      // 去抖动计数器时钟763Hz（周期约1.3ms）
-    assign clk_cpu = clk_pdu & stop_n;  // CPU工作时钟
+    assign clk_cpu = clk_pdu;           // CPU工作时钟
 
     assign clk_vga = clk_pdu;
 
-    assign stop = stop_r;
-    assign led = (led_sel_r)? chk_addr : led_data_r;
+    assign stop = 0;
+    assign led = pc[15:0];
     assign an = an_t;
     assign seg = seg_t;
     assign seg_sel = seg_sel_r;
@@ -89,11 +85,11 @@ module  pdu(
 
     assign btn ={step, cont, chk, data, del};
     assign x_p = xx_r ^ xx_1r;
-    assign step_p = btn_db_r[4] & ~ btn_db_1r[4];
-    assign cont_p = btn_db_r[3] & ~ btn_db_1r[3];
-    assign chk_p = btn_db_r[2] & ~ btn_db_1r[2];
-    assign data_p = btn_db_r[1] & ~ btn_db_1r[1];
-    assign del_p = btn_db_r[0] & ~ btn_db_1r[0];
+    assign step_p = btn_db_r[4] & ~btn_db_1r[4];
+    assign cont_p = btn_db_r[3] & ~btn_db_1r[3];
+    assign chk_p = btn_db_r[2] & ~btn_db_1r[2];
+    assign data_p = btn_db_r[1] & ~btn_db_1r[1];
+    assign del_p = btn_db_r[0] & ~btn_db_1r[0];
 
 
     ///////////////////////////////////////////////
@@ -110,11 +106,8 @@ module  pdu(
     ///////////////////////////////////////////////
     // 时钟分频
     ///////////////////////////////////////////////
-    always @(posedge clk or posedge rst) begin // changed
-        if (rst)
-            cnt_clk_r <= 20'h0;
-        else
-            cnt_clk_r <= cnt_clk_r + 20'h1;
+    always @(posedge clk) begin // changed
+        cnt_clk_r <= cnt_clk_r + 20'h1;
     end
 
 
@@ -179,72 +172,14 @@ module  pdu(
 
 
     ///////////////////////////////////////////////
-    // 控制CPU运行方式
-    ///////////////////////////////////////////////
-    reg [1:0] cs, ns;
-    parameter STOP = 2'b00, STEP = 2'b01, RUN = 2'b10;
-
-    always @(posedge clk_pdu or posedge rst) begin  // changed
-        if (rst)
-            cs <= STOP;
-        else
-            cs <= ns;
-    end
-
-    always @* begin
-        ns = cs;
-        case (cs)
-            STOP: begin
-                if (step_p)
-                    ns = STEP;
-                else if (cont_p)
-                    ns = RUN;
-            end
-            STEP:
-                ns = STOP;
-            RUN: begin
-                if (brk_addr_r == pc)
-                    ns = STOP;
-            end
-            default:
-                ns = STOP;
-        endcase
-    end
-
-    always @(posedge clk_pdu or posedge rst) begin  // changed
-        if (rst)
-            stop_r <= 1'b1;
-        else if (ns == STOP)
-            stop_r <= 1'b1;
-        else
-            stop_r <= 1'b0;
-    end
-    // assign stop_n = ~stop_r ?
-    always @(negedge clk_pdu or posedge rst) begin  // changed
-        if (rst)
-            stop_n <= 1'b0; // changed
-        else
-            stop_n <= ~stop_r; // changed
-    end
-
-
-    ///////////////////////////////////////////////
     // CPU输入/输出
     ///////////////////////////////////////////////
     always @(posedge clk_pdu or posedge rst) begin    // CPU输出 changed
         if (rst) begin
-            led_data_r <= 16'hFFFF;
             seg_data_r <= 32'h12345678;
         end
-        else if (io_we) begin
-            case (io_addr)
-                8'h00:
-                    led_data_r <= io_dout[15:0];
-                8'h0C:
-                    seg_data_r <= io_dout;
-                default:
-                    ;
-            endcase
+        else if (io_we & (io_addr == 8'h0C)) begin
+            seg_data_r <= io_dout;
         end
     end
 
@@ -257,7 +192,26 @@ module  pdu(
             seg_rdy_r <= 1;
     end
 
-    always @(*) begin    // CPU输入
+    reg btn_vld_r;
+    always @(posedge clk_pdu or posedge rst) begin  // changed
+        if (rst)
+            btn_vld_r <= 0;
+        else if ((step_p | cont_p | del_p | chk_p) & ~btn_vld_r)
+            btn_vld_r <= 1;
+        else if (io_rd & (io_addr == 8'h20))
+            btn_vld_r <= 0;
+    end
+
+    reg [3:0] btn_data_r;
+    always @(posedge clk_pdu or posedge rst) begin  // changed
+        if (rst)
+            btn_data_r <= 0;
+        else if ((step_p | cont_p | del_p | chk_p) & ~btn_vld_r)
+            // 上，下，左，右
+            btn_data_r <= {step_p, cont_p, del_p, chk_p};
+    end
+
+    always @(*) begin    // CPU 输入
         case (io_addr)
             8'h04:
                 io_din_t = {{11{1'b0}}, step, cont, chk, data, del, x};
@@ -269,6 +223,10 @@ module  pdu(
                 io_din_t = swx_data_r;
             8'h18:
                 io_din_t = cnt_data_r;
+            8'h1c:
+                io_din_t = {31'b0, btn_vld_r};
+            8'h20:
+                io_din_t = {28'b0, btn_data_r};
             default:
                 io_din_t = 32'h0;
         endcase
@@ -342,68 +300,41 @@ module  pdu(
         else if (x_p)
             tmp_r <= {tmp_r[27:0], x_hd_t};      // x_hd_t + tmp_r << 4
         else if (del_p)
-            tmp_r <= {{4{1'b0}}, tmp_r[31:4]}; // tmp_r >> 4
-        else if ((cont_p & stop) | (data_p & ~swx_vld_r))
+            tmp_r <= {{4{1'b0}}, tmp_r[31:4]};   // tmp_r >> 4
+        else if ((data_p & ~swx_vld_r))
             tmp_r <= 32'h0;
-        else if (chk_p & stop)
-            tmp_r <= tmp_r + 32'h1;
     end
 
     always @(posedge clk_pdu or posedge rst) begin  // changed
         if (rst) begin
             chk_addr_r <= 16'h0;
-            brk_addr_r <= 32'h0;
         end
         else if (data_p & ~swx_vld_r)
             swx_data_r <= tmp_r;
-        else if (cont_p & stop)
-            brk_addr_r <= tmp_r;
-        else if (chk_p & stop)
-            chk_addr_r <= tmp_r[15:0];
     end
-
-
-    ///////////////////////////////////////////////
-    // led15-0指示灯显示
-    ///////////////////////////////////////////////
-    always @(posedge clk_pdu or posedge rst) begin  // changed
-        if (rst)
-            led_sel_r <= 1'b0;
-        else if (io_we && (io_addr == 8'h00))
-            led_sel_r <= 1'b0;
-        else if (chk_p)
-            led_sel_r <= 1'b1;
-    end
-
 
     ///////////////////////////////////////////////
     // 数码管多用途显示
     ///////////////////////////////////////////////
-    always @(posedge clk_pdu or posedge rst) begin    // 数码管显示数据选择 changed
+    always @(posedge clk_pdu or posedge rst) begin
         if (rst)
             seg_sel_r <= 3'b001;
         else if (io_we & (io_addr == 8'h0C))
             seg_sel_r <= 3'b001;   // 输出
         else if (x_p | del_p)
             seg_sel_r <= 3'b010;                  // 编辑
-        else if (chk_p & stop)
-            seg_sel_r <= 3'b100;                 // 调试
     end
 
     always @* begin
         case (seg_sel_r)
             3'b001:
                 disp_data_t = seg_data_r;
-            3'b010:
-                disp_data_t = tmp_r;
-            3'b100:
-                disp_data_t = chk_data;
             default:
                 disp_data_t = tmp_r;
         endcase
     end
 
-    always @(*) begin          // 数码管扫描
+    always @(*) begin            // 数码管扫描
         case (cnt_clk_r[19:17])  // 刷新频率约为95Hz
             3'b000: begin
                 an_t = 8'b1111_1110;
@@ -442,7 +373,7 @@ module  pdu(
         endcase
     end
 
-    always @ (*) begin    //7段译码
+    always @ (*) begin    // 7段译码
         case(hd_t)
             4'b1111:
                 seg_t = 7'b0111000;

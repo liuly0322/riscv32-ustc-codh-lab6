@@ -45,10 +45,9 @@ module EX(
     // should_branch: 当前跳转指令是否需要跳转
     wire should_branch = ((ctrl_branch_ID[2] == 1)? ((ctrl_branch_ID[1] == 1)? alu_f[2]: alu_f[1]) : alu_f[0]) ^ ctrl_branch_ID[0];
     wire pc_branch_EX = (is_branch & (should_branch ^ predict_ID));       // 当且仅当预测失败
-    wire pc_jump_EX   = ctrl_jalr_ID;
-    assign pc_change_EX = pc_branch_EX | pc_jump_EX;
+    assign pc_change_EX = pc_branch_EX | ctrl_jalr_ID;
     always @(*) begin
-        if (predict_ID && !should_branch)
+        if (pc_branch_EX && predict_ID && !should_branch)
             pc_nxt_EX = pc_4_ID;
         else
             pc_nxt_EX = (ctrl_jalr_ID? rd1_ID: pc_ID) + imm_ID;

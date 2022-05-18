@@ -30,8 +30,7 @@ module mem_wrapper (
     output  io_rd;		    // 从外设输入数据时的读使能信号
     input [31:0]  io_din;   // 来自外设输入的数据
 
-    wire is_memory = (a[31:10] == 0);
-    wire is_mmio   = (a[15:8] == 8'hff);    // 判断现在是主存还是 mmio
+    wire is_mmio = (a[31:8] == 24'h0000ff);    // 判断现在是主存还是 mmio
     wire [31:0] mem_out;
     assign spo = is_mmio? io_din : mem_out;
     dist_mem data_mem (
@@ -39,7 +38,7 @@ module mem_wrapper (
                  .d(d),
                  .dpra(dpra[9:2]),
                  .clk(clk),
-                 .we(we & is_memory),
+                 .we(we & ~is_mmio),
                  .spo(mem_out),
                  .dpo(dpo)
              );

@@ -1,41 +1,41 @@
 
 module ID(
-    input clk,
-    input predict,
-    input          flush_ID,
-    input          ctrl_reg_write_EX,
-    input  [1: 0]  ctrl_wb_reg_src_EX,
-    input  [31: 0] pc_4_EX,
-    input  [4: 0]  reg_wb_addr_EX,
-    input  [4: 0]  reg_addr_debug,
-    output [31: 0] reg_data_debug,
-    input          reg_wb_en,
-    input [4: 0]   reg_wb_addr_MEM,
-    input [31: 0]  reg_wb_data,
-    input [31: 0]  pc_IF,
-    input [31: 0]  pc_4_IF,
-    input [31: 0]  ir_IF,
-    input [31: 0]  alu_out,
-    input [31: 0]  alu_out_EX,
-    input [31: 0]  mdr,
-    output load_use_hazard,
-    output [31: 0]  pc_nxt,
-    output reg [31: 0] pc_ID,
-    output reg [31: 0] pc_4_ID,
-    output reg [31: 0] rd1_ID,
-    output reg [31: 0] rd2_ID,
-    output reg [4: 0]  reg_wb_addr_ID, 
-    output reg [31: 0] imm_ID,
-    output reg predict_ID,
-    output reg [3: 0]  ctrl_branch_ID,
-    output reg ctrl_jalr_ID,
-    output reg ctrl_mem_r_ID,
-    output reg ctrl_mem_w_ID,
-    output reg [1:0] ctrl_wb_reg_src_ID,
-    output reg [3:0] ctrl_alu_op_ID,
-    output reg ctrl_alu_src1_ID,
-    output reg ctrl_alu_src2_ID,
-    output reg ctrl_reg_write_ID
+        input clk,
+        input predict,
+        input          flush_ID,
+        input          ctrl_reg_write_EX,
+        input  [1: 0]  ctrl_wb_reg_src_EX,
+        input  [31: 0] pc_4_EX,
+        input  [4: 0]  reg_wb_addr_EX,
+        input  [4: 0]  reg_addr_debug,
+        output [31: 0] reg_data_debug,
+        input          reg_wb_en,
+        input [4: 0]   reg_wb_addr_MEM,
+        input [31: 0]  reg_wb_data,
+        input [31: 0]  pc_IF,
+        input [31: 0]  pc_4_IF,
+        input [31: 0]  ir_IF,
+        input [31: 0]  alu_out,
+        input [31: 0]  alu_out_EX,
+        input [31: 0]  mdr,
+        output load_use_hazard,
+        output [31: 0]  pc_nxt,
+        output reg [31: 0] pc_ID,
+        output reg [31: 0] pc_4_ID,
+        output reg [31: 0] rd1_ID,
+        output reg [31: 0] rd2_ID,
+        output reg [4: 0]  reg_wb_addr_ID,
+        output reg [31: 0] imm_ID,
+        output reg predict_ID,
+        output reg [3: 0]  ctrl_branch_ID,
+        output reg ctrl_jalr_ID,
+        output reg ctrl_mem_r_ID,
+        output reg ctrl_mem_w_ID,
+        output reg [1:0] ctrl_wb_reg_src_ID,
+        output reg [3:0] ctrl_alu_op_ID,
+        output reg ctrl_alu_src1_ID,
+        output reg ctrl_alu_src2_ID,
+        output reg ctrl_reg_write_ID
     );
 
     wire [31:0] imm_ext;
@@ -96,13 +96,13 @@ module ID(
                 rd2_forward = mdr;
             else if (ctrl_wb_reg_src_EX == 2'b10)
                 rd2_forward = pc_4_EX;
-        end 
+        end
         if (ctrl_reg_write_ID && reg_wb_addr_ID == rs2) begin
             if (ctrl_wb_reg_src_ID == 2'b00)
                 rd2_forward = alu_out;
             else if (ctrl_wb_reg_src_ID == 2'b10)
                 rd2_forward = pc_4_ID;
-        end 
+        end
     end
     // 是否有 load 指令相关，交给 hazard 模块处理（产生一个周期气泡）
     assign load_use_hazard = ctrl_mem_r_ID && (reg_wb_addr_ID == rs2 || reg_wb_addr_ID == rs1);
@@ -110,8 +110,8 @@ module ID(
     always @(posedge clk) begin
         pc_ID   <= flush_ID? 0: pc_IF;
         pc_4_ID <= flush_ID? 0: pc_4_IF;
-        rd1_ID  <= flush_ID? 0: rd1_forward;
-        rd2_ID  <= flush_ID? 0: rd2_forward;
+        rd1_ID  <= (flush_ID || rs1 == 0)? 0: rd1_forward;
+        rd2_ID  <= (flush_ID || rs2 == 0)? 0: rd2_forward;
         imm_ID  <= flush_ID? 0: imm_ext;
         reg_wb_addr_ID  <= flush_ID? 0: ir_IF[11:7];
         predict_ID      <= flush_ID? 0: predict;
