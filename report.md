@@ -329,3 +329,84 @@ while (1)
 
 | ![](tic_tac_toe/o_win.png) | ![](tic_tac_toe/x_win.png) | ![](tic_tac_toe/draw.png) |
 | -------------------------- | --------------------------- | ------------------------- |
+
+## 贪吃蛇
+
+### C 语言实现
+
+```c
+while (1) {
+    // 等待计时器
+    if ((int)get(CNT_DATA) - past_time < interval) {
+        continue;
+    }
+    past_time += interval;
+
+    // 确认当前方向
+    if (get(BTN_VLD))
+        direction = get(BTN_DATA);
+
+    // 之前的蛇头变为蛇身
+    set(head_x, head_y, BODY_BASE + direction);
+
+    // 计算更新后蛇头坐标
+    if (direction == UP) {
+        head_x -= 1;
+    } else if ......
+
+    // 如果吃到苹果，更新苹果坐标，否则移动蛇尾
+    if (head_x == apple_x && head_y == apple_y) {
+        set(head_x, head_y, NONE);
+        // 随机生成新的坐标
+        ......
+        set(apple_x, apple_y, APPLE);
+    } else {
+        int tail_direction =
+            ((snake[tail_x][tail_y >> 3] >> (tail_y << 2)) & 15) -
+            BODY_BASE;
+        set(tail_x, tail_y, NONE);
+        // 更新 tail 的位置
+        ......
+    }
+
+    // 苹果处理完之后，如果当前蛇头所在格子不为空，则说明碰到障碍，退出
+    int head_state = (snake[head_x][head_y >> 3] >> (head_y << 2)) & 15;
+    if (head_state != NONE)
+        break;
+
+    // 设置蛇头，等待下个循环的计算
+    set(head_x, head_y, HEAD);
+}
+```
+
+状态编码采用宏定义配合状态压缩
+
+```c
+// 状态压缩，30 行，40 列，8 列压缩为一个 int(32 位)
+// 对应每个格子 4bit，参考 00(R分量)0(G分量)0(B分量)
+#define NONE 0    // 空格
+#define BORDER 1  // 蓝色边框
+#define HEAD 2    // 绿色蛇头
+#define APPLE 4   // 红色苹果
+#define BODY_BASE 7
+#define BODY_L 9   // 蛇身，左
+#define BODY_R 8   // 蛇身，右
+#define BODY_U 15  // 蛇身，上
+#define BODY_D 11  // 蛇身，下
+
+// 对应 rv32i 的 lw 指令
+inline unsigned get(int p) {
+    return *((unsigned*)p);
+}
+
+// 输入需要设置的坐标和状态
+inline void set(unsigned x, unsigned y, unsigned state) {
+    // 先抹平这些位，再将数据移位
+    snake[x][y >> 3] &= (~(15 << (y << 2)));
+    snake[x][y >> 3] |= (state << (y << 2));
+}
+```
+
+### 展示
+
+见文件夹内演示视频
