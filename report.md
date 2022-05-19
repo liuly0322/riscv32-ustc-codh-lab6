@@ -1,3 +1,67 @@
+&nbsp;
+
+<div style="text-align:center;font-size:2.5em;font-weight:bold">中国科学技术大学计算机学院</div>
+
+&nbsp;
+
+<div style="text-align:center;font-size:2.5em;font-weight:bold">《计算机组成原理实验报告》</div>
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+<img src="https://raw.githubusercontent.com/liuly0322/USTC-CS-COURSE-HW/main/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86%E5%AE%9E%E9%AA%8C/logo.png" style="zoom: 50%;margin:auto;display:block" />
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+<div style="display:flex;justify-content:center;font-size:1.8em;line-height:2em">
+<div>
+<p style="padding-bottom:5px">实验题目：</p>
+<p style="padding-bottom:5px">组员列表：</p>
+<p style="padding-bottom:5px">&#x3000;</p>
+<p style="padding-bottom:5px">完成时间：</p>
+</div>
+<div style="text-align: center;">
+<p style="border-bottom: 1px solid; padding:0px 1em 4px">综合设计</p>
+<p style="border-bottom: 1px solid; padding:0px 1em 4px">刘良宇 <span style="font-size:0.9em">PB20000180</span></p>
+<p style="border-bottom: 1px solid; padding:0px 1em 4px">王铖潇 <span style="font-size:0.9em">PB20000072</span></p>
+<p style="border-bottom: 1px solid; padding:0px 1em 4px">2022. 5. 19</p>
+</div>
+</div>
+
+
+<div style="page-break-after:always"></div>
+
+## 实验成果简介
+
+本小组此次实验中在流水线 CPU 的基础上，增加拓展了以下内容：
+
+- RV32i 指令集补充至 31 条
+- 采用两级动态 Branch History Table 分支预测
+- 提供可以实际运行的生命游戏，井字棋和贪吃蛇程序
+  - 使用 C 语言编写程序，探索了交叉编译，增进了对计算机抽象层级的理解
+  - 增添了对 VGA 屏幕外设的使用，使得程序更具有表现力
+  - 增加一般性的外设拓展方法
+    - 采用 `mem_wrapper` 提供地址总线的能力，对数据寄存器封装，支持 MMIO，便于拓展
+    - VGA 模块由于需求数据量较大，特别地，采取了共享内存的方式
+
+## 实验环境
+
+- Vivado 2019.1
+- Verilator 4.220
+
 ## 指令集扩充
 
 ### 新增指令介绍
@@ -16,20 +80,30 @@
 （这里应该可以配个修改后的数据通路图）
 
 - alu 修改（置位指令，lui 指令）
+
+  to be done
+
 - control 模块控制算数逻辑指令
-- 分支跳转部分利用三位标志位
+
+  to be done
+
+- 分支跳转部分利用 branch 指令对应三位标志位作为控制信号
+
+  to be done
 
 ### 新增指令测试
 
 对新增的指令进行了较为充分的测试：
 
- ![image-20220517105718522](report/image-20220517105718522.png)
+![image-20220517105718522](report/image-20220517105718522.png)
+
+对于每条新增指令都使用了多个测试样例
 
 测试原理示例：
 
 ![image-20220517105844596](report/image-20220517105844596.png)
 
-检测 pass 和 fail 寄存器的值
+可以在仿真过程中，检测 pass 和 fail 寄存器的值，判断测试结果，通过读 x10 寄存器可以知道当前进行到了第几个测试样例
 
 ![image-20220517105914127](report/image-20220517105914127.png)
 
@@ -39,26 +113,28 @@
 
 ### Verilator 高级语言仿真
 
-| ![](report/verilator1.png) | ![](report/verilator2.png) |
-| -------------------------- | -------------------------- |
-
 #### 简介
 
 Verilator 是一款高性能的 Verilog/System Verilog 开源仿真工具。运用 Verilator package，我们可以将 Verilog 和 System Verilog HDL 语言设计编译转换成 C++ 或者 SystemC 模型，所以从这个意义上来说，Verilator 更应该被成为是一个编译器而不是一个传统意义上的仿真器。
 
-   通常情况下，Verilator 的工作流程如下所示：
+通常情况下，Verilator 的工作流程如下所示：
 
 1. 首先 Verilator 将读取特定的 HDL 文件并检查其代码，同时还可以选择支持检查覆盖率和 debug 波形的生成。然后将源文件编译成源代码级的 `C++`或`SystemC`模型。其输出的模型会以`.cpp`和`.h`文件存在。
 2. 为了能够完成仿真，额外需要一个用户自行编写的 C++ wrapper，这个 wrapper 与传统的 Verilog Testbench 功能类似，主要是为了连接顶层模块，并给予相应的激励。
 3. 在 C++ 编译器的工作下，所有的之前生成的文件（C++ wrapper 以及 Verilated Model）以及库文件（Verilator 提供的 runtime library 或者 SystemC 库文件）会被一同合并成一个可执行文件。
 4. 执行生成的可执行文件，就可以开始实际的仿真，"simulation runtime"
 
-优势：
+#### 优势
 
-- 仿真速度更快
+- 最快的开源仿真器
 - coverage test（覆盖测试）
   - 覆盖率，便于功能验证
-  - 断言式的测试样例（灵活度高）
+  - 断言式的测试样例（灵活度高），对应 Verilog testbench 文件中的 function 或者 task，但编写起来更为容易，可以自动判断 CPU 功能正确与否
+
+| ![](report/verilator1.png) | ![](report/verilator2.png) |
+| -------------------------- | -------------------------- |
+
+图：覆盖测试能解决的问题
 
 ## 分支预测
 
@@ -72,9 +148,9 @@ Verilator 是一款高性能的 Verilog/System Verilog 开源仿真工具。运�
 
 #### 动态分支预测
 
-- 记录上次分支的结果
+- 记录上次分支的结果（BTB）
 
-- 基于两位饱和计数器的分支预测
+- 基于两位饱和计数器的分支预测 （BHT）
 
   ![](report/counter.jpg)
 
@@ -83,8 +159,19 @@ Verilator 是一款高性能的 Verilog/System Verilog 开源仿真工具。运�
   - Tse-Yu Yeh and Yale N. Patt
 
   ![image-20220517112404458](report/image-20220517112404458.png)
+  
+  对于每个跳转的 pattern 都对应饱和计数器，进一步提高了分支预测准确性
+  
+  实现上，可以使用两级 RAM 查询
+  
 
-（以下这些测试可以考虑绘制折线图等）
+### Verilog 实现
+
+  to be done
+
+（以下这些测试结果可以考虑优化排版，绘制折线图等）
+
+下面分别挑选排序测试以及两个分支测试样例，对比采用不同的分支预测策略对 CPI 的降低情况
 
 ### 排序测试
 
@@ -226,6 +313,8 @@ $\mathrm{CPI} = 1.004$
 
 ![image-20220517113023820](report/image-20220517113023820.png)
 
+这里需要注意的是，如果编译开启了 `-O2` 优化选项，那么一些对于 MMIO 区域的数据读写操作可能会被编译器优化，可以考虑对 MMIO 地址添加 `volatile` 关键词来禁止编译器的这一优化
+
 ### 简介
 
 生命游戏中，对于任意细胞，规则如下：
@@ -250,7 +339,7 @@ $\mathrm{CPI} = 1.004$
   }
   ```
 
-- 状态压缩  + 位运算
+- 状态压缩 + 位运算
 
   ```cpp
   if (life[x] & (1 << y)) {
@@ -271,6 +360,8 @@ vga_output---vga_driver--read-->memory
 ```
 
 ### 展示
+
+to be done
 
 <http://home.ustc.edu.cn/~liuly0322/videos/life_game.mp4>
 
@@ -328,9 +419,25 @@ while (1)
 不同的胜负画面：
 
 | ![](tic_tac_toe/o_win.png) | ![](tic_tac_toe/x_win.png) | ![](tic_tac_toe/draw.png) |
-| -------------------------- | --------------------------- | ------------------------- |
+| -------------------------- | -------------------------- | ------------------------- |
 
 ## 贪吃蛇
+
+### 外设使用
+
+贪吃蛇可以比较好的体现出 CPU 处理外部设备的能力
+
+此程序通过 MMIO ，需要访问：
+
+- 性能计数器，起到一个计时器的功能
+- 上下左右按钮的输入
+- 硬件随机数发生器（可选）
+
+本程序采用初始种子生成苹果坐标，故没有采用硬件随机数生成器；通过轮询的方式，与性能计数器和按钮输入达成了良好的交互
+
+从中也可以看出，中断对于外设交互并不是必须的
+
+> 最初引入硬件中断，只是出于性能上的考量。如果电脑系统没有中断，则处理器与外部设备通信时，它必须在向该设备发出指令后进行忙等待（Busy waiting），反复轮询该设备是否完成了动作并返回结果。这就造成了大量处理器周期被浪费。引入中断以后，当处理器发出设备请求后就可以立即返回以处理其他任务，而当设备完成动作后，发送中断信号给处理器，后者就可以再回过头获取处理结果。这样，在设备进行处理的周期内，处理器可以执行其他一些有意义的工作，而只付出一些很小的切换所引发的时间代价
 
 ### C 语言实现
 
@@ -409,4 +516,16 @@ inline void set(unsigned x, unsigned y, unsigned state) {
 
 ### 展示
 
+to be done
+
 见文件夹内演示视频
+
+## 总结与思考
+
+to be done
+
+## 致谢
+
+- 本项目得到了中国科学技术大学 Vlab 实验平台的帮助与支持。
+
+- 自动化测试参考 <https://github.com/cs3001h/cs3001h.tests> 以及官方测试 <https://github.com/riscv-software-src/riscv-tests>
