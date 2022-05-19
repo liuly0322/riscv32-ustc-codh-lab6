@@ -34,10 +34,6 @@ USTC CODH 课程的综合实验 lab6
 
 分支预测采用 2-level adaptive training 策略，具体性能评估见 report.md
 
-## 地址总线
-
-通过 `mem_wrapper` 对主存和 I/O 设备进行地址映射，可以通过在 `mem_wrapper` 模块调整映射地址区域扩充外设
-
 ## VGA 应用程序
 
 作为示例，本项目运行了三个应用程序，生命游戏，井字棋和贪吃蛇。具体说明和演示视频见 `life_game`, `tic_tac_toe`, `snake` 文件夹
