@@ -1,6 +1,7 @@
 module control (
         input [31:0] ir,
-        output [3:0] control_branch,
+        output [2:0] funct3,
+        output control_branch,
         output control_jal,
         output control_jalr,
         output control_mem_read,
@@ -12,7 +13,7 @@ module control (
         output control_reg_write);
 
     wire [6:0] opcd = ir[6:0];
-    wire [2:0] func3 = ir[14:12];
+    assign funct3 = ir[14:12];
 
     wire is_load    = (opcd == 7'b0000011);
     wire is_branch  = (opcd == 7'b1100011);
@@ -29,7 +30,7 @@ module control (
     // control_branch[2]: ir[14]，用于区分使用 alu 的哪个标志位（a=b or a<b）
     // control_branch[1]: ir[13]，如果比较大小是否使用无符号数
     // control_branch[0]: ir[12]，用于区分功能相反的跳转指令，例如 beq 和 bne
-    assign control_branch     = {is_branch, ir[14: 12]};
+    assign control_branch     = is_branch;
     assign control_jal        = is_jal;
     assign control_jalr       = is_jalr;
     assign control_mem_read   = is_load;
@@ -63,7 +64,7 @@ module control (
         else if (is_lui)
             ctrl_alu_op = 4'b1010;
         else if (is_arith || is_arith_i) begin
-            case (func3)
+            case (funct3)
                 3'b000: begin           // add(i), sub(i)
                     if(is_arith & ir[30])
                         ctrl_alu_op = 4'b0001;

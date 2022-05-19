@@ -1,12 +1,13 @@
 module EX(
         input clk,
         input rstn,
+        input [2: 0]       funct3_ID,
         input              predict_ID,
         input [3: 0]       ctrl_alu_op_ID,
         input              ctrl_alu_src1_ID,
         input              ctrl_alu_src2_ID,
         input              ctrl_jalr_ID,
-        input [3: 0]       ctrl_branch_ID,
+        input              ctrl_branch_ID,
         input [4: 0]       reg_wb_addr_ID,
         input [31: 0]      imm_ID,
         input [31: 0]      rd1_ID,
@@ -30,7 +31,8 @@ module EX(
         output reg [31: 0] rd2_EX,
         output reg [31: 0] pc_4_EX,
         output reg [4: 0]  reg_wb_addr_EX,
-        output reg         ctrl_mem_w_EX
+        output reg         ctrl_mem_w_EX,
+        output reg [2: 0]  funct3_EX
     );
 
     // alu 模块及 alu 模块的端口连接
@@ -39,12 +41,9 @@ module EX(
     wire [2:  0] alu_f;
     alu alu32 (.a(alu_in1), .b(alu_in2), .s(ctrl_alu_op_ID), .y(alu_out), .f(alu_f));
 
-    // ctrl_branch 信号三位含义见 control 模块
-    // is_branch:     当前指令是否是跳转指令
-    wire is_branch     = ctrl_branch_ID[3];
     // should_branch: 当前跳转指令是否需要跳转
-    wire should_branch = ((ctrl_branch_ID[2] == 1)? ((ctrl_branch_ID[1] == 1)? alu_f[2]: alu_f[1]) : alu_f[0]) ^ ctrl_branch_ID[0];
-    wire pc_branch_EX = (is_branch & (should_branch ^ predict_ID));       // 当且仅当预测失败
+    wire should_branch = ((funct3_ID[2] == 1)? ((funct3_ID[1] == 1)? alu_f[2]: alu_f[1]) : alu_f[0]) ^ funct3_ID[0];
+    wire pc_branch_EX = (ctrl_branch_ID & (should_branch ^ predict_ID));       // 当且仅当预测失败
     assign pc_change_EX = pc_branch_EX | ctrl_jalr_ID;
     always @(*) begin
         if (pc_branch_EX && predict_ID && !should_branch)
@@ -54,7 +53,7 @@ module EX(
     end
 
     assign record_pc   = pc_ID[6:2];
-    assign record_we   = is_branch;
+    assign record_we   = ctrl_branch_ID;
     assign record_data = should_branch;
 
     always @(posedge clk) begin
@@ -66,6 +65,7 @@ module EX(
         ctrl_mem_w_EX      <= ~rstn? 0: ctrl_mem_w_ID;
         pc_4_EX            <= ~rstn? 0: pc_4_ID;
         reg_wb_addr_EX     <= ~rstn? 0: reg_wb_addr_ID;
+        funct3_EX          <= ~rstn? 0: funct3_ID;
     end
 
 endmodule

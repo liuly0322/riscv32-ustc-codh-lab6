@@ -26,8 +26,9 @@ module ID(
         output reg [31: 0] rd2_ID,
         output reg [4: 0]  reg_wb_addr_ID,
         output reg [31: 0] imm_ID,
+        output reg [2:0] funct3_ID,
         output reg predict_ID,
-        output reg [3: 0]  ctrl_branch_ID,
+        output reg ctrl_branch_ID,
         output reg ctrl_jalr_ID,
         output reg ctrl_mem_r_ID,
         output reg ctrl_mem_w_ID,
@@ -38,21 +39,22 @@ module ID(
         output reg ctrl_reg_write_ID
     );
 
+    wire [2:0]  funct3;
     wire [31:0] imm_ext;
-    wire [3:0] control_branch;
+    wire control_branch;
     wire control_jal, control_jalr;
     wire control_mem_read;
     wire control_mem_write;
-    wire [1:0] control_wb_reg_src;
-    wire [3:0] control_alu_op;
+    wire [1:0]  control_wb_reg_src;
+    wire [3:0]  control_alu_op;
     wire control_alu_src1;
     wire control_alu_src2;
     wire control_reg_write;
 
     // ID 段组合逻辑计算下一个 IF 段取的地址
-    assign pc_nxt = ((control_branch[3] & predict) | control_jal)? pc_IF + imm_ext : pc_4_IF;
+    assign pc_nxt = ((control_branch & predict) | control_jal)? pc_IF + imm_ext : pc_4_IF;
 
-    control control_unit (.ir(ir_IF), .control_branch(control_branch), .control_jal(control_jal), .control_jalr(control_jalr), .control_mem_read(control_mem_read),
+    control control_unit (.ir(ir_IF),.funct3(funct3), .control_branch(control_branch), .control_jal(control_jal), .control_jalr(control_jalr), .control_mem_read(control_mem_read),
                           .control_mem_write(control_mem_write), .control_wb_reg_src(control_wb_reg_src), .control_alu_op(control_alu_op),
                           .control_alu_src1(control_alu_src1), .control_alu_src2(control_alu_src2), .control_reg_write(control_reg_write));
 
@@ -113,6 +115,7 @@ module ID(
         rd1_ID  <= (flush_ID || rs1 == 0)? 0: rd1_forward;
         rd2_ID  <= (flush_ID || rs2 == 0)? 0: rd2_forward;
         imm_ID  <= flush_ID? 0: imm_ext;
+        funct3_ID       <= flush_ID? 0: funct3;
         reg_wb_addr_ID  <= flush_ID? 0: ir_IF[11:7];
         predict_ID      <= flush_ID? 0: predict;
         ctrl_branch_ID  <= flush_ID? 0: control_branch;

@@ -17,16 +17,16 @@ USTC CODH 课程的综合实验 lab6
 
 ## rv32i 指令集
 
-实现除部分访存指令之外的所有 rv32i 指令
+实现了所有的 rv32i 指令
 
 - add, sub, and, or, sll, sra, srl, xor, slt, sltu
 - addi, andi, ori, slli, srai, srli, xori, slti, sltiu
 - auipc, lui
-- lw, sw
+- lw, sw, lb, lbu, lh, lhu, sb, sh
 - beq, bne, blt, bge, bltu, bgeu
 - jal, jalr
 
-共计 31 条
+共计 37 条
 
 ## 冲突处理及分支预测
 
