@@ -72,8 +72,8 @@ module ID(
         pc_4_ID <= flush_ID? 0: pc_4_IF;
         rs1_ID  <= flush_ID? 0: rs1;
         rs2_ID  <= flush_ID? 0: rs2;
-        rd1_ID  <= (flush_ID || rs1 == 0)? 0: rd1;
-        rd2_ID  <= (flush_ID || rs2 == 0)? 0: rd2;
+        rd1_ID  <= flush_ID? 0: rd1;
+        rd2_ID  <= flush_ID? 0: rd2;
         imm_ID  <= flush_ID? 0: imm_ext;
         funct3_ID       <= flush_ID? 0: funct3;
         reg_wb_addr_ID  <= flush_ID? 0: ir_IF[11:7];

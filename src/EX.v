@@ -52,6 +52,8 @@ module EX(
             else if (ctrl_wb_reg_src_EX == 2'b10)
                 rd1_forward = pc_4_EX;
         end
+        if (rs1_ID == 0)
+            rd1_forward = 0;
     end
     reg [31:0] rd2_forward;
     always @(*) begin
@@ -65,6 +67,8 @@ module EX(
             else if (ctrl_wb_reg_src_EX == 2'b10)
                 rd2_forward = pc_4_EX;
         end
+        if (rs2_ID == 0)
+            rd2_forward = 0;
     end
 
     // alu 模块及 alu 模块的端口连接
