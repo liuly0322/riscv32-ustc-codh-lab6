@@ -30,9 +30,13 @@ USTC CODH 课程的综合实验 lab6
 
 ## 冲突处理及分支预测
 
+此部分主要是 CPU 的性能相关
+
 较为完善地降低了 CPU 的 CPI，当且仅当 load 指令与后面指令存在数据相关时会产生气泡
 
 分支预测采用 2-level adaptive training 策略，具体性能评估见 report.md
+
+当前 cpu 可以运行在约 85MHz 下
 
 ## VGA 应用程序
 
