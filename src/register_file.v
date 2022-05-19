@@ -19,5 +19,6 @@ module register_file #(
     assign rd_debug = (ra_debug != 0)? (((ra_debug == wa) && we)? wd : rf[ra_debug]) : 0;
 
     always @(posedge clk)
-        if (we) rf[wa] <= wd;
+        if (we)
+            rf[wa] <= wd;
 endmodule

@@ -19,14 +19,14 @@ module MEM(
         input [1: 0]        ctrl_wb_reg_src_EX,
         output reg [31: 0]  pc_4_MEM,
         output reg [31: 0]  alu_out_MEM,
-        output [31: 0]      mdr,
         output reg [31: 0]  mdr_MEM,
-        output reg          reg_wb_en,
+        output reg          ctrl_reg_write_MEM,
         output reg [1: 0]   ctrl_wb_reg_src_MEM,
         output reg [4: 0]   reg_wb_addr_MEM
     );
 
     // 对数据寄存器的一个包装。在数据寄存器的基础上增加了 mmio
+    wire [31:0] mdr;
     mem_wrapper data_mem (
                     .a(alu_out_EX),
                     .d(rd2_EX),
@@ -48,7 +48,7 @@ module MEM(
     always@(posedge clk) begin
         pc_4_MEM            <= ~rstn? 0: pc_4_EX;
         alu_out_MEM         <= ~rstn? 0: alu_out_EX;
-        reg_wb_en           <= ~rstn? 0: ctrl_reg_write_EX;
+        ctrl_reg_write_MEM  <= ~rstn? 0: ctrl_reg_write_EX;
         ctrl_wb_reg_src_MEM <= ~rstn? 0: ctrl_wb_reg_src_EX;
         mdr_MEM             <= ~rstn? 0: mdr;
         reg_wb_addr_MEM     <= ~rstn? 0: reg_wb_addr_EX;

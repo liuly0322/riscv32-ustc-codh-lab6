@@ -31,14 +31,16 @@ module  cpu (
     // id 段
     wire          flush_ID;             // 清空 id，目前是由于 load-use hazard 或者 pc 变动（与预测的 pc 不符）
     wire [31:0]   reg_data_debug;       // pdu 使用的读寄存器
-    wire [31:0]   pc_ID;                // id/mem 段 pc
-    wire [31:0]   pc_4_ID;              // id/mem 段 pc+4
+    wire [31:0]   pc_ID;                // id/ex 段 pc
+    wire [31:0]   pc_4_ID;              // id/ex 段 pc+4
     wire          predict;              // id 段，如果正在执行的指令是分支指令，预测是否跳转
     wire [31:0]   pc_nxt;               // id 段，结合 predict 和 pc_4_IF 得出下一条发射的 pc，交给 if
-    wire          predict_ID;           // id/mem 段 predict
-    wire [31:0]   rd1_ID;               // id/mem 段 rd1，已经过 forward 处理
-    wire [31:0]   rd2_ID;               // id/mem 段 rd2，已经过 forward 处理
-    wire [31:0]   imm_ID;               // id/mem 段 imm
+    wire          predict_ID;           // id/ex 段 predict
+    wire [4:0]    rs1_ID;               // id/ex 段 rs1, 用于 ex 段判断是否需要 forward
+    wire [4:0]    rs2_ID;               // id/ex 段 rs2, 用于 ex 段判断是否需要 forward
+    wire [31:0]   rd1_ID;               // id/ex 段 rd1
+    wire [31:0]   rd2_ID;               // id/ex 段 rd2
+    wire [31:0]   imm_ID;               // id/ex 段 imm
     wire [2:0]    funct3_ID;
     wire          ctrl_branch_ID;
     wire          ctrl_mem_r_ID;
@@ -57,7 +59,6 @@ module  cpu (
     wire [1: 0]   ctrl_wb_reg_src_EX;
     wire [4: 0]   reg_wb_addr_EX;
     wire          ctrl_mem_r_EX;
-    wire [31: 0]  alu_out;              // 直接连接 alu 输出（forward 用）
     wire [31: 0]  alu_out_EX;
     wire          pc_change_EX;         // pc 是否需要更改（预测失败或者 jalr）
     wire [31: 0]  pc_nxt_EX;            // 更改后的 pc
@@ -72,13 +73,12 @@ module  cpu (
     // mem 段
     wire [31: 0]  pc_4_MEM;
     wire [31: 0]  alu_out_MEM;
-    wire [31: 0]  mdr;                  // 直接连接内存读出数据端口（forward 用）
     wire [31: 0]  mdr_MEM;
     wire [1: 0]   ctrl_wb_reg_src_MEM;
     wire [4: 0]   reg_wb_addr_MEM;
 
     // wb 段（写回 id 段，这里都是 mem/wb 的段间寄存器）
-    wire          reg_wb_en;
+    wire          ctrl_reg_write_MEM;
     wire [31: 0]  reg_wb_data;
 
     branch_predict u_branch_predict(
@@ -121,24 +121,19 @@ module  cpu (
            .funct3_ID          ( funct3_ID         ),
            .pc_nxt             ( pc_nxt            ),
            .flush_ID           ( flush_ID | ~rstn  ),
-           .ctrl_reg_write_EX  ( ctrl_reg_write_EX ),
-           .ctrl_wb_reg_src_EX ( ctrl_wb_reg_src_EX),
-           .alu_out_EX         ( alu_out_EX        ),
-           .pc_4_EX            ( pc_4_EX           ),
-           .reg_wb_addr_EX     ( reg_wb_addr_EX    ),
            .reg_addr_debug     ( reg_addr_debug    ),
            .reg_data_debug     ( reg_data_debug    ),
-           .reg_wb_en          ( reg_wb_en         ),
+           .ctrl_reg_write_MEM ( ctrl_reg_write_MEM),
            .reg_wb_addr_MEM    ( reg_wb_addr_MEM   ),
            .reg_wb_data        ( reg_wb_data       ),
-           .alu_out            ( alu_out           ),
            .load_use_hazard    ( load_use_hazard   ),
-           .mdr                ( mdr               ),
            .pc_IF              ( pc_IF             ),
            .pc_4_IF            ( pc_4_IF           ),
            .ir_IF              ( ir_IF             ),
            .pc_ID              ( pc_ID             ),
            .pc_4_ID            ( pc_4_ID           ),
+           .rs1_ID             ( rs1_ID            ),
+           .rs2_ID             ( rs2_ID            ),
            .rd1_ID             ( rd1_ID            ),
            .rd2_ID             ( rd2_ID            ),
            .imm_ID             ( imm_ID            ),
@@ -162,16 +157,17 @@ module  cpu (
            .record_we          ( record_we         ),
            .record_pc          ( record_pc         ),
            .record_data        ( record_data       ),
-           .alu_out            ( alu_out           ),
            .ctrl_alu_op_ID     ( ctrl_alu_op_ID    ),
            .ctrl_alu_src1_ID   ( ctrl_alu_src1_ID  ),
            .ctrl_alu_src2_ID   ( ctrl_alu_src2_ID  ),
            .ctrl_jalr_ID       ( ctrl_jalr_ID      ),
            .ctrl_branch_ID     ( ctrl_branch_ID    ),
            .imm_ID             ( imm_ID            ),
+           .rs1_ID             ( rs1_ID            ),
            .rd1_ID             ( rd1_ID            ),
            .pc_ID              ( pc_ID             ),
            .pc_4_ID            ( pc_4_ID           ),
+           .rs2_ID             ( rs2_ID            ),
            .rd2_ID             ( rd2_ID            ),
            .ctrl_reg_write_ID  ( ctrl_reg_write_ID ),
            .reg_wb_addr_ID     ( reg_wb_addr_ID    ),
@@ -188,7 +184,10 @@ module  cpu (
            .rd2_EX             ( rd2_EX            ),
            .pc_4_EX            ( pc_4_EX           ),
            .ctrl_mem_w_EX      ( ctrl_mem_w_EX     ),
-           .funct3_EX          ( funct3_EX         )
+           .funct3_EX          ( funct3_EX         ),
+           .ctrl_reg_write_MEM ( ctrl_reg_write_MEM),
+           .reg_wb_addr_MEM    ( reg_wb_addr_MEM   ),
+           .reg_wb_data        ( reg_wb_data       )
        );
 
     MEM u_MEM(
@@ -211,10 +210,9 @@ module  cpu (
             .ctrl_wb_reg_src_EX ( ctrl_wb_reg_src_EX),
             .pc_4_MEM           ( pc_4_MEM          ),
             .alu_out_MEM        ( alu_out_MEM       ),
-            .mdr                ( mdr               ),
             .mdr_MEM            ( mdr_MEM           ),
             .reg_wb_addr_EX     ( reg_wb_addr_EX    ),
-            .reg_wb_en          ( reg_wb_en         ),
+            .ctrl_reg_write_MEM ( ctrl_reg_write_MEM),
             .reg_wb_addr_MEM    ( reg_wb_addr_MEM   ),
             .ctrl_wb_reg_src_MEM( ctrl_wb_reg_src_MEM)
         );
