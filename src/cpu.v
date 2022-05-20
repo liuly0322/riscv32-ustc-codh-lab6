@@ -23,6 +23,9 @@ module  cpu (
     // 对于段内寄存器，取所在段作为命名后缀
 
     // if 段
+    wire [31:0]   predict_pc;           // 预测的下一个 pc
+    wire          predict_IF;           // if/id 段的指令是否被预测跳转
+    wire          flush_IF;             // if/id 段清空（因为 pc 改变）
     wire          stall_IF;             // if 段停顿，目前是由于 load-use hazard
     wire [31:0]	  pc_IF;                // if/id 段的 pc，可以认为是正在执行的指令
     wire [31:0]	  ir_IF;                // if/id 段正在执行的指令
@@ -34,7 +37,6 @@ module  cpu (
     wire [31:0]   pc_ID;                // id/ex 段 pc
     wire [31:0]   pc_4_ID;              // id/ex 段 pc+4
     wire          predict;              // id 段，如果正在执行的指令是分支指令，预测是否跳转
-    wire [31:0]   pc_nxt;               // id 段，结合 predict 和 pc_4_IF 得出下一条发射的 pc，交给 if
     wire          predict_ID;           // id/ex 段 predict
     wire [4:0]    rs1_ID;               // id/ex 段 rs1, 用于 ex 段判断是否需要 forward
     wire [4:0]    rs2_ID;               // id/ex 段 rs2, 用于 ex 段判断是否需要 forward
@@ -48,6 +50,7 @@ module  cpu (
     wire [1:0]    ctrl_wb_reg_src_ID;
     wire [4:0]    reg_wb_addr_ID;
     wire [3:0]    ctrl_alu_op_ID;
+    wire          ctrl_jal_ID;
     wire          ctrl_jalr_ID;
     wire          ctrl_alu_src1_ID;
     wire          ctrl_alu_src2_ID;
@@ -63,7 +66,7 @@ module  cpu (
     wire          pc_change_EX;         // pc 是否需要更改（预测失败或者 jalr）
     wire [31: 0]  pc_nxt_EX;            // 更改后的 pc
     wire          record_we;            // 是否记录分支历史，即当前 ex 段是否是分支指令
-    wire [4: 0]   record_pc;            // 记录的 pc[6:2]
+    wire [31: 0]  record_pc_result;     // 记录的跳转后地址
     wire          record_data;          // 当前分支指令是否跳转
     wire [31: 0]  rd2_EX;
     wire [31: 0]  pc_4_EX;
@@ -84,11 +87,13 @@ module  cpu (
     branch_predict u_branch_predict(
                        .clk           		( clk           		),
                        .rstn                ( rstn                  ),
-                       .record_chk_pc 		( pc_IF[6:2]     		),
+                       .chk_branch_pc       ( pc[9:2]        		),
                        .record_we     		( record_we     		),
-                       .record_pc     		( record_pc     		),
+                       .record_pc     		( pc_ID[9:2]     		),
+                       .record_pc_result    ( record_pc_result      ),
                        .record_data   		( record_data   		),
-                       .predict       		( predict       		)
+                       .predict       		( predict       		),
+                       .predict_pc          ( predict_pc            )
                    );
 
 
@@ -96,6 +101,7 @@ module  cpu (
                .rstn               ( rstn              ),
                .load_use_hazard    ( load_use_hazard   ),
                .pc_change_EX       ( pc_change_EX      ),
+               .flush_IF           ( flush_IF          ),
                .stall_IF           ( stall_IF          ),
                .flush_ID           ( flush_ID          )
            );
@@ -103,23 +109,26 @@ module  cpu (
     IF u_IF(
            .clk          		( clk          		),
            .rstn                ( rstn              ),
+           .pc                  ( pc                ),
+           .flush_IF            ( flush_IF          ),
            .stall_IF            ( stall_IF          ),
-           .pc_nxt              ( pc_nxt            ),
+           .predict             ( predict           ),
+           .predict_pc          ( predict_pc        ),
            .pc_nxt_EX    		( pc_nxt_EX    		),
            .pc_change_EX 		( pc_change_EX 		),
            .ir_IF        		( ir_IF        		),
            .pc_IF        		( pc_IF        		),
-           .pc_4_IF      		( pc_4_IF      		)
+           .pc_4_IF      		( pc_4_IF      		),
+           .predict_IF          ( predict_IF        )
        );
 
     wire [4:0] reg_addr_debug = chk_addr[4: 0];
 
     ID u_ID(
            .clk                ( clk               ),
-           .predict            ( predict           ),
+           .predict_IF         ( predict_IF        ),
            .predict_ID         ( predict_ID        ),
            .funct3_ID          ( funct3_ID         ),
-           .pc_nxt             ( pc_nxt            ),
            .flush_ID           ( flush_ID | ~rstn  ),
            .reg_addr_debug     ( reg_addr_debug    ),
            .reg_data_debug     ( reg_data_debug    ),
@@ -143,6 +152,7 @@ module  cpu (
            .ctrl_mem_w_ID      ( ctrl_mem_w_ID     ),
            .ctrl_wb_reg_src_ID ( ctrl_wb_reg_src_ID),
            .ctrl_alu_op_ID     ( ctrl_alu_op_ID    ),
+           .ctrl_jal_ID        ( ctrl_jal_ID       ),
            .ctrl_jalr_ID       ( ctrl_jalr_ID      ),
            .ctrl_alu_src1_ID   ( ctrl_alu_src1_ID  ),
            .ctrl_alu_src2_ID   ( ctrl_alu_src2_ID  ),
@@ -155,11 +165,12 @@ module  cpu (
            .funct3_ID          ( funct3_ID         ),
            .predict_ID         ( predict_ID        ),
            .record_we          ( record_we         ),
-           .record_pc          ( record_pc         ),
            .record_data        ( record_data       ),
+           .record_pc_result   ( record_pc_result  ),
            .ctrl_alu_op_ID     ( ctrl_alu_op_ID    ),
            .ctrl_alu_src1_ID   ( ctrl_alu_src1_ID  ),
            .ctrl_alu_src2_ID   ( ctrl_alu_src2_ID  ),
+           .ctrl_jal_ID        ( ctrl_jal_ID       ),
            .ctrl_jalr_ID       ( ctrl_jalr_ID      ),
            .ctrl_branch_ID     ( ctrl_branch_ID    ),
            .imm_ID             ( imm_ID            ),
@@ -227,9 +238,9 @@ module  cpu (
 
     reg [31:0] debug_data;
     assign chk_data = debug_data;
-    assign pc       = pc_4_IF;
     always @(*) begin
-        if (chk_addr[15:12] == 1) begin        // 查看寄存器值
+        if
+        (chk_addr[15:12] == 1) begin        // 查看寄存器值
             debug_data = reg_data_debug;
         end
         else begin

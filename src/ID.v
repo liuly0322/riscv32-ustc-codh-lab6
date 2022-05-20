@@ -1,7 +1,7 @@
 
 module ID(
         input clk,
-        input predict,
+        input predict_IF,
         input          flush_ID,
         input  [4: 0]  reg_addr_debug,
         output [31: 0] reg_data_debug,
@@ -12,7 +12,6 @@ module ID(
         input [31: 0]  pc_4_IF,
         input [31: 0]  ir_IF,
         output load_use_hazard,
-        output [31: 0]  pc_nxt,
         output reg [31: 0] pc_ID,
         output reg [31: 0] pc_4_ID,
         output reg [4: 0]  rs1_ID,
@@ -24,6 +23,7 @@ module ID(
         output reg [2:0] funct3_ID,
         output reg predict_ID,
         output reg ctrl_branch_ID,
+        output reg ctrl_jal_ID,
         output reg ctrl_jalr_ID,
         output reg ctrl_mem_r_ID,
         output reg ctrl_mem_w_ID,
@@ -45,9 +45,6 @@ module ID(
     wire control_alu_src1;
     wire control_alu_src2;
     wire control_reg_write;
-
-    // ID 段组合逻辑计算下一个 IF 段取的地址
-    assign pc_nxt = ((control_branch & predict) | control_jal)? pc_IF + imm_ext : pc_4_IF;
 
     control control_unit (.ir(ir_IF),.funct3(funct3), .control_branch(control_branch), .control_jal(control_jal), .control_jalr(control_jalr), .control_mem_read(control_mem_read),
                           .control_mem_write(control_mem_write), .control_wb_reg_src(control_wb_reg_src), .control_alu_op(control_alu_op),
@@ -77,8 +74,9 @@ module ID(
         imm_ID  <= flush_ID? 0: imm_ext;
         funct3_ID       <= flush_ID? 0: funct3;
         reg_wb_addr_ID  <= flush_ID? 0: ir_IF[11:7];
-        predict_ID      <= flush_ID? 0: predict;
+        predict_ID      <= flush_ID? 0: predict_IF;
         ctrl_branch_ID  <= flush_ID? 0: control_branch;
+        ctrl_jal_ID     <= flush_ID? 0: control_jal;
         ctrl_jalr_ID    <= flush_ID? 0: control_jalr;
         ctrl_mem_r_ID   <= flush_ID? 0: control_mem_read;
         ctrl_mem_w_ID   <= flush_ID? 0: control_mem_write;

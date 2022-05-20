@@ -35,8 +35,8 @@ module control (
     assign control_jalr       = is_jalr;
     assign control_mem_read   = is_load;
     assign control_mem_write  = is_store;
-    assign control_alu_src1   = is_auipc;
-    assign control_alu_src2   = is_auipc | is_arith_i | is_load | is_store | is_lui;
+    assign control_alu_src1   = is_auipc | is_jal;
+    assign control_alu_src2   = is_auipc | is_jal | is_jalr | is_arith_i | is_load | is_store | is_lui;
     assign control_reg_write  = ~(is_branch | is_store);
 
     // 写回寄存器的数据来源：
