@@ -50,9 +50,9 @@
 - RV32I 指令集补全（37 条）
 - 采用两级动态 Branch History Table 分支预测
 - 提供可以实际运行的生命游戏，井字棋和贪吃蛇程序
-  - 使用 C 语言编写程序，探索了交叉编译，增进了对计算机抽象层级的理解
+  - 使用 C 语言编写程序，探索了交叉编译流程，增进了对计算机抽象层级的理解
   - 增添了对 VGA 屏幕外设的使用，使得程序更具有表现力
-  - 增加一般性的外设拓展方法
+  - 考虑了一般性的外设拓展方法
     - 一般地，对数据寄存器封装，使用 MMIO
     - 特别地，由于 VGA 模块数据需求量较大，采取了共享内存的方式
 
@@ -63,8 +63,6 @@
 
 ## 指令集扩充
 
-### 新增指令介绍
-
 实现所有 RV32I 指令（37 条）：
 
 - add, sub, and, or, sll, sra, srl, xor, slt, sltu
@@ -74,25 +72,94 @@
 - beq, bne, blt, bge, bltu, bgeu
 - jal, jalr
 
-#### 原理介绍
+### 原理介绍
 
-（这里应该可以配个修改后的数据通路图）
+整体数据通路参考：
 
-- alu 修改（置位指令，lui 指令）
+![cpu](https://github.com/Summer-Summer/ComputerArchitectureLab/blob/master/images/CPU.PNG?raw=true)
 
-  to be done
+下面具体介绍一些涉及到的修改：
 
-- control 模块控制算数逻辑指令
+- ALU 和 control 模块修改
 
-  to be done
+  对于置位指令，lui 指令，可以和算数逻辑指令统一，让写回寄存器的数据来源取 ALU 输出，通过控制 ALU 操作数让 ALU 计算出正确的结果 
 
-- 分支跳转部分利用 branch 指令对应三位标志位作为控制信号
+  ```verilog
+  module alu #(
+          parameter AW = 5,
+          parameter DW = 32)
+      (input [DW - 1: 0] a,
+       input [DW - 1: 0] b,       // 两操作数
+       input [3: 0] s,            // 功能选择
+       output reg [DW - 1: 0] y,  // 运算结果
+       output [2: 0] f);          // 标志
+  
+      // 大小判断
+      wire [DW - 1: 0] a_minus_b = a - b;
+      wire a_s = a[DW - 1];
+      wire b_s = b[DW - 1];
+      wire y_s = a_minus_b[DW - 1];
+  
+      // 移位
+      wire [AW - 1: 0] b_shift = b[AW - 1: 0];
+  
+      // 大小比较信号
+      wire less_signed   = (a_s & ~b_s) | (a_s & y_s) | (~b_s & y_s);
+      wire less_unsigned = (~a_s & b_s) | (~a_s & y_s) | (b_s & y_s);
+      assign f = {less_unsigned, less_signed, (a_minus_b == 0)};
+  
+      always @(*) begin
+          case (s)
+              4'b0001:
+                  y = a_minus_b;
+              4'b0010:
+                  y = a & b;
+              4'b0011:
+                  y = a | b;
+              4'b0100:
+                  y = a ^ b;
+              4'b0101:
+                  y = a >> b_shift;
+              4'b0110:
+                  y = a << b_shift;
+              4'b0111:
+                  y = ($signed(a)) >>> b_shift;       // signed
+              4'b1000:
+                  y = {31'b0, f[1]};
+              4'b1001:
+                  y = {31'b0, f[2]};
+              4'b1010:
+                  y = b;
+              default:
+                  y = a + b;
+          endcase
+      end
+  
+  endmodule
+  ```
 
-  to be done
+  可以看到，`4'b1000` 和 `4'b1001` 用于置位指令，`4'b1010` 用于 lui
 
-- 访存指令
+  这样修改最大程度保持了数据通路的简洁性
 
-  to be done
+  控制模块根据指令 funct3 位的值生成 ctrl_alu_op 信号
+
+- 跳转判断和访存指令都需要用到 funct3 位，可以直接流水段传递
+
+    对于跳转指令，有：
+
+    - funct3[2]，用于区分使用 alu 的相等判断还是大小比较
+    - funct3[1]，用于区分如果比较大小，是否使用无符号数
+    - funct3[0]，用于区分功能相反的跳转指令，例如 beq 和 bne
+
+    因此 EX 段判断是否应该跳转的逻辑如下：
+
+    ```verilog
+    wire should_branch = funct3_ID[0] ^
+    					(!funct3_ID[2]? alu_f[0]: ((funct3_ID[1] == 1)? alu_f[2]: alu_f[1]));
+    ```
+
+    对于访存指令，类似地区分 lw, sw, lb, lbu, lh, lhu, sb, sh 即可
 
 ### 新增指令测试
 
@@ -139,124 +206,225 @@ Verilator 是一款高性能的 Verilog/System Verilog 开源仿真工具。运�
 | ![](report/verilator1.png) | ![](report/verilator2.png) |
 | -------------------------- | -------------------------- |
 
-图：覆盖测试能解决的问题
+图：覆盖测试能解决的痛点
 
 ## 分支预测
 
+### 意义
+
+根据 Real Silicon 调研的数据，对于现代编译器编译后的程序，大概每隔 4.6 - 5.2 条指令就有一个分支（包括 call 和 direct jump 这种非条件分支），而在我们的五级流水线 CPU 上，每次挑战失败都需要损失两个周期，相当于执行了两条空指令，也就是说，在分支预测完全失败的情况下，不考虑其他相关引起的流水线停顿，我们的 CPU 的 CPI 已经高达 1.4，如果能够通过分支预测的方式将 CPI 降低到 1 左右，就可以提高约 40% 的性能，这是一个很诱人的数字。下面，将首先介绍几种分支预测策略的原理，再给出本组的实现
+
 ### 原理
+
+主要分为静态分支预测和动态分支预测两类。
 
 #### 静态分支预测
 
-- 统一不跳转 / 统一跳转
-- 下一条指令统一发射地址较小的
+- 预测统一不跳转 / 统一跳转
+- 取下一条指令统一发射地址较小的
 - ......
 
 #### 动态分支预测
 
-- 记录上次分支的结果（BTB）
+- 缓存跳转后地址，并且用 1bit 记录上次分支的结果（BTB）
+
+  ![image-20220521105359592](report/image-20220521105359592.png)
 
 - 基于两位饱和计数器的分支预测 （BHT）
+
+  这种方式是在 BTB 基础之上的改进，仍然需要 BTB 表，但是判断某分支是否跳转的依据不再是 1bit 的上一次记录，而是为每个分支指令映射到一个 2bit 的饱和计数器上，这样抗干扰能力更强（当之前连续跳转失败时，只有连续两次跳转成功才能使状态机变为预测跳转的状态，同理，如果连续跳转成功，那么需要连续两次跳转失败才能使状态机给出的预测变为不跳转）
 
   ![](report/counter.jpg)
 
 - 两级适应性训练 Two-Level Adaptive Training
 
-  - Tse-Yu Yeh and Yale N. Patt
+  - 提出：Tse-Yu Yeh 和 Yale N. Patt
 
   ![image-20220517112404458](report/image-20220517112404458.png)
 
-  对于每个跳转的 pattern 都对应饱和计数器，进一步提高了分支预测准确性
+  在 BHT 的基础上改进，对于 **每个分支指令跳转的 pattern（模式）** 都映射到一个饱和计数器，进一步提高了分支预测准确性
 
-  实现上，可以使用两级 RAM 查询
+  例如，如果一个分支指令跳转与否的历史记录分别是：
+  
+  `TNNNTNNNTNNNTNNN...`
+  
+  那么，分支预测器就会学习到，如果前几次的 pattern 是 `TNNN`，则下一次预测结果应该是 `T` ，因为 `TNNN` 这一模式对应的饱和计数器可以被学习为预测跳转的状态
+  
+  这对于以下的跳转模式十分有用：
+  
+  ```cpp
+  for (int i = 0; i < n; i++) {
+      if (i % 4) {
+          // do something
+      }
+      // do something
+  }
+  ```
+  
+  `if` 指令跳转与否具有周期性，可以被记忆
 
-#### 本实验实现
-
-BTB + 2-level adaptive training
+值得注意的是，动态分支预测和静态分支预测并不是对立的，对于某条跳转指令，在第一次执行到时，动态分支预测可以采用静态预测的方法给出它跳转与否的初值，进一步提高预测准确性
 
 ### Verilog 实现
 
-to be done
+采用 BTB + 2-level adaptive training 的策略
 
-（以下这些测试结果可以考虑优化排版，绘制折线图等）
+对应流程图：
 
-下面分别挑选排序测试以及两个分支测试样例，对比采用不同的分支预测策略对 CPI 的降低情况
+![image-20220521105445168](report/image-20220521105445168.png)
+
+IF 段如果 PC 被预测跳转，下一个周期 PC 可以直接变为从 BTB 表中读出的跳转后 PC
+
+同时，预测跳转与否的信息也会沿着流水线传递到 EX 段，EX 段根据实际跳转与否，可能需要将跳转后 PC 写入 BTB 表，并通知分支预测模块更新饱和计数器
+
+整体模块如下所示：
+
+```verilog
+module branch_predict(
+    input clk,
+    input rstn,
+
+    // EX 段记录结果
+    input record_we,                // 是否记录分支历史
+    input [9:2] record_pc,          // 记录的 pc
+    input record_data,              // 记录是否跳转
+    input [31:0] record_pc_result,  // 记录跳转后 pc
+    // IF 段查询当前 pc
+    input [9:2] chk_branch_pc,
+    output predict,                 // 预测结果
+    output [31:0] predict_pc        // 预测的 pc
+);
+
+reg [31:0] btb[0:255];      // BTB 表
+reg [1:0]  record[0:255];   // (hash 后) 饱和计数器
+reg [2:0]  history[0:31];   // (hash 后) 分支历史
+
+wire [4: 0] chk_pc_hash    = chk_branch_pc[6:2];
+wire [4: 0] record_pc_hash = record_pc[6:2];
+
+assign predict_pc = btb[chk_branch_pc];
+assign predict    = rstn & record[{chk_pc_hash, history[chk_pc_hash]}][1] & (predict_pc != 0);
+
+always @(posedge clk) begin
+    if (record_we) begin
+        // 记录跳转后地址
+        if (record_data) begin
+            btb[record_pc] <= record_pc_result;
+        end
+        // 指令对应的跳转历史左移一位
+        history[record_pc_hash] <= {history[record_pc_hash][1:0], record_data};
+        // 下面判断是否需要更新饱和计数器
+        ......
+    end
+end
+
+endmodule
+
+```
+
+IF 段：
+
+```verilog
+always @(posedge clk) begin
+    if (!rstn)
+        pc <= 32'h3000;
+    else if (pc_change_EX)
+        pc <= pc_nxt_EX;
+    else if (stall_IF)
+        pc <= pc;
+    else if (predict)       // 如果预测跳转
+        pc <= predict_pc;
+    else					// 预测不跳转自然是 PC + 4，无需额外操作
+        pc <= pc_4;
+end
+```
+
+EX 段：
+
+```verilog
+always @(*) begin
+    if (ctrl_jal_ID | ctrl_jalr_ID)
+        pc_nxt_EX = alu_out;
+    else if (pc_branch_EX && predict_ID && !should_branch)   // 预测跳转但没有跳转
+        pc_nxt_EX = pc_4_ID;
+    else                                                     // 预测不跳转但跳转
+        pc_nxt_EX = pc_ID + imm_ID;
+end
+
+assign record_we        = ctrl_branch_ID | jal_fail;
+assign record_data      = ctrl_jal_ID? 1: should_branch;
+assign record_pc_result = pc_nxt_EX;
+```
+
+这里我们也将 `jal` 跳转后地址存入 BTB 表
+
+hazard 模块：
+
+```verilog
+......
+assign flush_IF = rstn & pc_change_EX;
+assign flush_ID = rstn & (pc_change_EX | load_use_hazard);
+```
+
+可以看到预测失败的代价是两个周期
+
+下面分别挑选排序测试以及两个分支测试样例，对比采用不同的分支预测策略对性能的提高情况
 
 ### 排序测试
 
-#### 单周期（CPI = 1）
+对内存中的 16 个数进行冒泡排序
 
-![image-20220506131500227](report/image-20220506131500227.png)
+```assembly
+.data
+...... # 这里有 16 个数
 
-#### 流水线（无分支预测）
+.text
+addi	t1, zero, 0	    # sorted
+addi	t0, zero, 17	# set n to array size + 1
+addi 	a1, zero, 16	# const size (for print out
+addi	a0, zero, 1	    # const 1
+OUTER:
+addi	t0, t0, -1
+sub	t1, a0, t1
+beqz	t1, END
+addi	t2, zero, 0	 # i = 0
+INNER:
+addi	t2, t2, 1	 # init: i = 1
+beq	t2, t0, OUTER
+addi	t5, t2, -1
+add	t5, t5, t5
+add	t5, t5, t5
+lw	t3, (t5)
+add	t6, t2, t2
+add	t6, t6, t6
+lw	t4, (t6)
+blt	t3, t4, INNER
+beq	t3, t4, INNER	# 否则需要交换
+sw	t3, (t6)
+sw	t4, (t5)
+addi	t1, zero, 0
+j	INNER
+END:
+```
 
-![image-20220506131546222](report/image-20220506131546222.png)
+对几种分支预测方式进行测试：
 
-$\mathrm{CPI} = 3187/2290 = 1.392$
+|      | 单周期 | 无分支预测 | 静态分支预测 | BTB 预测 |
+| :--: | :----: | :--------: | :----------: | :------: |
+| 周期 |     ![image-20220506131500227](report/image-20220506131500227.png)   |       ![image-20220506131546222](report/image-20220506131546222.png)     |       ![image-20220506131630753](report/image-20220506131630753.png)       |     ![image-20220506205005538](report/image-20220506205005538.png)     |
+| CPI  |    1    |        1.392    |     1.231         |   1.119       |
 
-#### 流水线（默认分支失败）
+对于排序比较的随机跳转，静态分支预测和 BTB 预测差距不大，BTB 主要提升了用于循环的跳转语句预测成功率
 
-![image-20220506131630753](report/image-20220506131630753.png)
+可以看到，BTB 预测和单周期的基准大约只差了 10%
 
-$\mathrm{CPI} = 2819/2290 = 1.231$
+这里由于排序结果导致的跳转比较随机，两级适应性 BHT 和 BTB 结果差距不大，不再列出
 
-#### 流水线（ load 仅在产生相关时气泡）
-
-![image-20220506133345894](report/image-20220506133345894.png)
-
-$\mathrm{CPI} = 2643/2290 = 1.154$
-
-#### 流水线（分支预测）
-
-![image-20220506205005538](report/image-20220506205005538.png)
-
-$\mathrm{CPI} = 2563/2290 = 1.119$
+![image-20220521134633281](report/image-20220521134633281.png)
 
 ### 分支测试
 
-```cpp
-for (int i = 0; i <= 1000; i++) {
-    if (i <= 500) {
-        i++;
-    }
-}
-```
-
-对应汇编代码：
-
-```assembly
-addi a0, zero, 1000
-addi a1, zero, 500
-addi t1, zero, 0  # i
-
-LOOP:
-blt  a0, t1, FINISH
-blt  a1, t1, CONT
-addi t1  t1, 1
-CONT:
-addi t1, t1, 1
-beq  zero, zero, LOOP
-
-FINISH:
-addi t6, zero, 1
-```
-
-#### 单周期（CPI = 1）
-
-![image-20220506162917623](report/image-20220506162917623.png)
-
-#### 流水线（默认跳转失败分支预测）
-
-![image-20220506162747975](report/image-20220506162747975.png)
-
-$\mathrm{CPI} = 9019/6517=1.384$
-
-#### 流水线（优化分支预测）
-
-![image-20220506163814604](report/image-20220506163814604.png)
-
-$\mathrm{CPI}=6529/6517=1.002$
-
-### 分支测试（续）
+这一组测试主要体现两级适应性 BHT 对分支历史 pattern 的学习能力
 
 ```c
 for (int i = 0; i <= 1000; i++) {
@@ -286,29 +454,26 @@ FINISH:
 addi t6, zero, 1
 ```
 
-#### 单周期
+对几种分支预测方式进行测试：
 
-![image-20220514004522267](report/image-20220514004522267.png)
+|      | 单周期 | 无分支预测 | BHT | 两级 BHT |
+| :--: | :----: | :--------: | :----------: | :------: |
+| 周期 |     ![image-20220514004522267](report/image-20220514004522267.png)   |       ![image-20220521142503121](report/image-20220521142503121.png)     |       ![image-20220514000829679](report/image-20220514000829679.png)       |     ![image-20220514000839423](report/image-20220514000839423.png)     |
+| CPI  |    1    |      1.333    |     1.049         |   1.004       |
 
-#### 流水线（饱和计数器）
+两级 BHT 在这种情况下将 CPI 几乎降低到了 1，相比 BHT 进一步提高了准确率
 
-![image-20220514000829679](report/image-20220514000829679.png)
-
-$\mathrm{CPI} = 1.049$
-
-#### 流水线（二级适应性训练）
-
-![image-20220514000839423](report/image-20220514000839423.png)
-
-$\mathrm{CPI} = 1.004$
+![image-20220521142921110](report/image-20220521142921110.png)
 
 ## 生命游戏
 
-作为示例，本 cpu 搭载了两个和 vga 结合的展示程序
+作为示例，本 cpu 搭载了三个和 vga 结合的展示程序，分别是生命游戏，井字棋和贪吃蛇
 
 ### 编译
 
-采用 `riscv` 交叉编译工具链，使得仅需要编写 C 程序就可以很方便的烧写上板
+首先简单介绍一下这三个程序的编译环境
+
+使用 vlab 提供的 `riscv` 交叉编译工具链，使得仅需要编写 C 程序就可以很方便的烧写上板
 
 环境如下：
 
@@ -317,11 +482,11 @@ $\mathrm{CPI} = 1.004$
 - Vlab Ubuntu 20.04
 - riscv32-unknown-elf-gcc 10.2.0
 
-配置 makefile 使得自动生成 objdump 等文件
+参考修改助教 makefile ，自动生成 objdump 等文件，便于仿真及上板测试
 
 ![image-20220517113023820](report/image-20220517113023820.png)
 
-这里需要注意的是，如果编译开启了 `-O2` 优化选项，那么一些对于 MMIO 区域的数据读写操作可能会被编译器优化，可以考虑对 MMIO 地址添加 `volatile` 关键词来禁止编译器的这一优化
+这里需要注意的是，如果编译开启了 `-O2` 优化选项，那么一些对于 MMIO 区域的数据读写操作可能会因为编译器优化而消失，导致 CPU 并未如预期读写这些地址，甚至发生死循环。可以考虑在 C 程序中对 MMIO 地址添加 `volatile` 关键词来禁止编译器的这一优化
 
 ### 简介
 
@@ -369,9 +534,11 @@ vga_output---vga_driver--read-->memory
 
 ### 展示
 
-to be done
+稳定的 "脉冲星" 图形（周期为 3）
 
-<http://home.ustc.edu.cn/~liuly0322/videos/life_game.mp4>
+![image-20220521145125855](report/image-20220521145125855.png)
+
+详细视频：<http://home.ustc.edu.cn/~liuly0322/videos/life_game.mp4>
 
 ## 井字棋
 
@@ -422,12 +589,12 @@ while (1)
 
 ### 展示
 
-<http://home.ustc.edu.cn/~liuly0322/videos/tic_tac_toe.mp4>
-
 不同的胜负画面：
 
 | ![](tic_tac_toe/o_win.png) | ![](tic_tac_toe/x_win.png) | ![](tic_tac_toe/draw.png) |
 | -------------------------- | -------------------------- | ------------------------- |
+
+详细视频：<http://home.ustc.edu.cn/~liuly0322/videos/tic_tac_toe.mp4>
 
 ## 贪吃蛇
 
@@ -524,9 +691,11 @@ inline void set(unsigned x, unsigned y, unsigned state) {
 
 ### 展示
 
-to be done
+有较好的操作感
 
-见文件夹内演示视频
+![image-20220521145504939](report/image-20220521145504939.png)
+
+详细视频：<http://home.ustc.edu.cn/~liuly0322/videos/snake.mp4>
 
 ## 总结与思考
 
@@ -534,6 +703,8 @@ to be done
 
 ## 致谢
 
-- 本项目得到了中国科学技术大学 Vlab 实验平台的帮助与支持。
-
-- 自动化测试参考 <https://github.com/cs3001h/cs3001h.tests> 以及官方测试 <https://github.com/riscv-software-src/riscv-tests>
+- 感谢老师和助教们一个学期以来的辛苦付出
+- 本项目得到了中国科学技术大学 Vlab 实验平台的帮助与支持
+- 自动化测试参考
+  - <https://github.com/cs3001h/cs3001h.tests>
+  - <https://github.com/riscv-software-src/riscv-tests>

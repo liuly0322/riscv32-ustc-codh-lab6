@@ -25,11 +25,6 @@ module control (
     wire is_arith   = (opcd == 7'b0110011);
     wire is_arith_i = (opcd == 7'b0010011);
 
-    // control_branch 信号
-    // control_branch[3]: 当前是否是跳转指令
-    // control_branch[2]: ir[14]，用于区分使用 alu 的哪个标志位（a=b or a<b）
-    // control_branch[1]: ir[13]，如果比较大小是否使用无符号数
-    // control_branch[0]: ir[12]，用于区分功能相反的跳转指令，例如 beq 和 bne
     assign control_branch     = is_branch;
     assign control_jal        = is_jal;
     assign control_jalr       = is_jalr;
