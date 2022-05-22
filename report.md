@@ -697,10 +697,6 @@ inline void set(unsigned x, unsigned y, unsigned state) {
 
 详细视频：<http://home.ustc.edu.cn/~liuly0322/videos/snake.mp4>
 
-## 总结与思考
-
-to be done
-
 ## 致谢
 
 - 感谢老师和助教们一个学期以来的辛苦付出
