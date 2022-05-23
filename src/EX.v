@@ -84,6 +84,19 @@ module EX(
     // jal:    同上，但是必然应该跳转，下一条指令可能没有跳转
     // jalr:   同上，但是这里只需要反馈给 pc, jalr 的目的地址无法记录
 
+    // This block is for debug
+    // reg [31:0] is_branch_cnt, branch_fail_cnt, is_jal_cnt, jal_fail_cnt;
+    // always @(posedge clk) begin
+    //     if (ctrl_branch_ID)
+    //         is_branch_cnt <= is_branch_cnt + 1;
+    //     if (ctrl_jal_ID)
+    //         is_jal_cnt <= is_jal_cnt + 1;
+    //     if (pc_branch_EX)
+    //         branch_fail_cnt <= branch_fail_cnt + 1;
+    // 	if (jal_fail)
+    // 		jal_fail_cnt <= jal_fail_cnt + 1;
+    // end
+
     wire should_branch = ((funct3_ID[2] == 1)? ((funct3_ID[1] == 1)? alu_f[2]: alu_f[1]) : alu_f[0]) ^ funct3_ID[0];
     wire jal_fail      = (ctrl_jal_ID & ~predict_ID);
     wire pc_branch_EX  = (ctrl_branch_ID & (should_branch ^ predict_ID));       // 预测失败, branch 引发 pc 更改

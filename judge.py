@@ -2,12 +2,15 @@ import subprocess
 
 while True:
     print("输入想要测试的 case 名，输入 quit 退出")
-    print("当前支持： sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri load_store")
+    print("当前支持： top sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri load_store")
     try:
         s = input().strip()
     except:
         exit(0)
     if s == "quit":
+        break
+    if s == "top":
+        print("请手动执行 top_test.sh")
         break
     cpu_test_file_name = s[:-1] if s[-1].isdigit() else s
     subprocess.run(['cp', 'headers/{}_data.coe'.format(s), 'headers/data.coe'])
