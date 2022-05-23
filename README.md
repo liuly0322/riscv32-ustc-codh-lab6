@@ -1,5 +1,7 @@
 # USTC-CODH-LAB6 实验
 
+![test](https://github.com/liuly0322/ustc-codh-lab6/actions/workflows/test.yml/badge.svg)
+
 USTC CODH 课程的综合实验 lab6
 
 使用实体板：xc7a100tcsg324-1
