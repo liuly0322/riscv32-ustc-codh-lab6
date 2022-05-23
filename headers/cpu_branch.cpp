@@ -52,8 +52,9 @@ int main(int argc, char** argv) {
         main_time++;
     }
 
-    cout << "未能在给定周期内结束测试，可以考虑手动调整 cpp 文件中周期设置"
-         << endl;
+    cout
+        << "失败：未能在给定周期内结束测试，可以考虑手动调整 cpp 文件中周期设置"
+        << endl;
     tfp->close();
     exit(0);
 }
