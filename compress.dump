@@ -1,0 +1,176 @@
+
+rv32mi/siaf.o:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00003000 <_start>:
+    3000:	00000093          	addi	x1,x0,0
+    3004:	00000f93          	addi	x31,x0,0
+    3008:	00000513          	addi	x10,x0,0
+    300c:	00000593          	addi	x11,x0,0
+    3010:	00200513          	addi	x10,x0,2
+    3014:	29a00593          	addi	x11,x0,666
+
+00003018 <test_2>:
+    3018:	0140006f          	jal	x0,302c <data+0x10>
+
+0000301c <data>:
+    301c:	3210                	c.fld	f12,32(x12)
+    301e:	7654                	c.flw	f13,44(x12)
+    3020:	ba98                	c.fsd	f14,48(x13)
+    3022:	fedc                	c.fsw	f15,60(x13)
+    3024:	3210                	c.fld	f12,32(x12)
+    3026:	7654                	c.flw	f13,44(x12)
+    3028:	ba98                	c.fsd	f14,48(x13)
+    302a:	fedc                	c.fsw	f15,60(x13)
+    302c:	00158593          	addi	x11,x11,1
+    3030:	29b00393          	addi	x7,x0,667
+    3034:	00200513          	addi	x10,x0,2
+    3038:	14759663          	bne	x11,x7,3184 <fail>
+    303c:	00001137          	lui	x2,0x1
+    3040:	23410113          	addi	x2,x2,564 # 1234 <_start-0x1dcc>
+
+00003044 <test_3>:
+    3044:	1fe8                	c.addi4spn	x10,x2,1020
+    3046:	0001                	c.addi	x0,0
+    3048:	000013b7          	lui	x7,0x1
+    304c:	63038393          	addi	x7,x7,1584 # 1630 <_start-0x19d0>
+    3050:	00300513          	addi	x10,x0,3
+    3054:	12751863          	bne	x10,x7,3184 <fail>
+
+00003058 <test_4>:
+    3058:	617d                	c.addi16sp	x2,496
+    305a:	0001                	c.addi	x0,0
+    305c:	000013b7          	lui	x7,0x1
+    3060:	42438393          	addi	x7,x7,1060 # 1424 <_start-0x1bdc>
+    3064:	00400513          	addi	x10,x0,4
+    3068:	10711e63          	bne	x2,x7,3184 <fail>
+
+0000306c <test_5>:
+    306c:	7101                	c.addi16sp	x2,-512
+    306e:	0001                	c.addi	x0,0
+    3070:	000013b7          	lui	x7,0x1
+    3074:	22438393          	addi	x7,x7,548 # 1224 <_start-0x1ddc>
+    3078:	00500513          	addi	x10,x0,5
+    307c:	10711463          	bne	x2,x7,3184 <fail>
+    3080:	00000597          	auipc	x11,0x0
+    3084:	f9c58593          	addi	x11,x11,-100 # 301c <data>
+
+00003088 <test_6>:
+    3088:	41c8                	c.lw	x10,4(x11)
+    308a:	0505                	c.addi	x10,1
+    308c:	c1c8                	c.sw	x10,4(x11)
+    308e:	41d0                	c.lw	x12,4(x11)
+    3090:	fedcc3b7          	lui	x7,0xfedcc
+    3094:	a9938393          	addi	x7,x7,-1383 # fedcba99 <_end+0xfedc88fd>
+    3098:	00600513          	addi	x10,x0,6
+    309c:	0e761463          	bne	x12,x7,3184 <fail>
+
+000030a0 <test_8>:
+    30a0:	00106513          	ori	x10,x0,1
+    30a4:	1541                	c.addi	x10,-16
+    30a6:	0001                	c.addi	x0,0
+    30a8:	ff100393          	addi	x7,x0,-15
+    30ac:	00800513          	addi	x10,x0,8
+    30b0:	0c751a63          	bne	x10,x7,3184 <fail>
+
+000030b4 <test_9>:
+    30b4:	00106793          	ori	x15,x0,1
+    30b8:	57c1                	c.li	x15,-16
+    30ba:	0001                	c.addi	x0,0
+    30bc:	ff000393          	addi	x7,x0,-16
+    30c0:	00900513          	addi	x10,x0,9
+    30c4:	0c779063          	bne	x15,x7,3184 <fail>
+
+000030c8 <test_11>:
+    30c8:	7405                	c.lui	x8,0xfffe1
+    30ca:	8431                	c.srai	x8,0xc
+    30cc:	fe100393          	addi	x7,x0,-31
+    30d0:	00b00513          	addi	x10,x0,11
+    30d4:	0a741863          	bne	x8,x7,3184 <fail>
+
+000030d8 <test_12>:
+    30d8:	7405                	c.lui	x8,0xfffe1
+    30da:	8031                	c.srli	x8,0xc
+    30dc:	001003b7          	lui	x7,0x100
+    30e0:	fe138393          	addi	x7,x7,-31 # fffe1 <_end+0xfce45>
+    30e4:	00c00513          	addi	x10,x0,12
+    30e8:	08741e63          	bne	x8,x7,3184 <fail>
+
+000030ec <test_14>:
+    30ec:	5479                	c.li	x8,-2
+    30ee:	983d                	c.andi	x8,-17
+    30f0:	fee00393          	addi	x7,x0,-18
+    30f4:	00e00513          	addi	x10,x0,14
+    30f8:	08741663          	bne	x8,x7,3184 <fail>
+
+000030fc <test_15>:
+    30fc:	44d1                	c.li	x9,20
+    30fe:	4519                	c.li	x10,6
+    3100:	8c89                	c.sub	x9,x10
+    3102:	0001                	c.addi	x0,0
+    3104:	00e00393          	addi	x7,x0,14
+    3108:	00f00513          	addi	x10,x0,15
+    310c:	06749c63          	bne	x9,x7,3184 <fail>
+
+00003110 <test_16>:
+    3110:	44d1                	c.li	x9,20
+    3112:	4519                	c.li	x10,6
+    3114:	8ca9                	c.xor	x9,x10
+    3116:	0001                	c.addi	x0,0
+    3118:	01200393          	addi	x7,x0,18
+    311c:	01000513          	addi	x10,x0,16
+    3120:	06749263          	bne	x9,x7,3184 <fail>
+
+00003124 <test_17>:
+    3124:	44d1                	c.li	x9,20
+    3126:	4519                	c.li	x10,6
+    3128:	8cc9                	c.or	x9,x10
+    312a:	0001                	c.addi	x0,0
+    312c:	01600393          	addi	x7,x0,22
+    3130:	01100513          	addi	x10,x0,17
+    3134:	04749863          	bne	x9,x7,3184 <fail>
+
+00003138 <test_18>:
+    3138:	44d1                	c.li	x9,20
+    313a:	4519                	c.li	x10,6
+    313c:	8ce9                	c.and	x9,x10
+    313e:	0001                	c.addi	x0,0
+    3140:	00400393          	addi	x7,x0,4
+    3144:	01200513          	addi	x10,x0,18
+    3148:	02749e63          	bne	x9,x7,3184 <fail>
+    314c:	00000117          	auipc	x2,0x0
+    3150:	ed010113          	addi	x2,x2,-304 # 301c <data>
+
+00003154 <test_40>:
+    3154:	4532                	c.lwsp	x10,12(x2)
+    3156:	0505                	c.addi	x10,1
+    3158:	c62a                	c.swsp	x10,12(x2)
+    315a:	4632                	c.lwsp	x12,12(x2)
+    315c:	fedcc3b7          	lui	x7,0xfedcc
+    3160:	a9938393          	addi	x7,x7,-1383 # fedcba99 <_end+0xfedc88fd>
+    3164:	02800513          	addi	x10,x0,40
+    3168:	00761e63          	bne	x12,x7,3184 <fail>
+
+0000316c <test_42>:
+    316c:	12300513          	addi	x10,x0,291
+    3170:	82aa                	c.mv	x5,x10
+    3172:	92aa                	c.add	x5,x10
+    3174:	24600393          	addi	x7,x0,582
+    3178:	02a00513          	addi	x10,x0,42
+    317c:	00729463          	bne	x5,x7,3184 <fail>
+    3180:	00a01863          	bne	x0,x10,3190 <pass>
+
+00003184 <fail>:
+    3184:	00000513          	addi	x10,x0,0
+    3188:	00100593          	addi	x11,x0,1
+    318c:	00008067          	jalr	x0,0(x1)
+
+00003190 <pass>:
+    3190:	00100513          	addi	x10,x0,1
+    3194:	00100593          	addi	x11,x0,1
+    3198:	00008067          	jalr	x0,0(x1)
+
+0000319c <_end>:
+    319c:	00000013          	addi	x0,x0,0

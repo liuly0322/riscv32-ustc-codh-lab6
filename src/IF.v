@@ -14,7 +14,9 @@ module IF(
     wire [31: 0] ir;
     dist_ir ir_mem (.a(pc[9:2]), .d(0), .clk(clk), .we(0), .spo(ir));
 
-    wire[31:0] pc_4 = pc + 32'h4;
+    wire [31:0] pc_2 = pc + 32'h2;
+    wire [31:0] pc_4 = pc + 32'h4;
+    wire is_compressed = pc[1] || (ir[1:0] != 2'b11);
 
     always@(posedge clk) begin
         if (flush_IF | !rstn) begin
@@ -40,6 +42,8 @@ module IF(
             pc <= pc;
         else if (predict)
             pc <= predict_pc;
+        else if (is_compressed)
+            pc <= pc_2;
         else
             pc <= pc_4;
     end

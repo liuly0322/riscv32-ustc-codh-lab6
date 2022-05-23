@@ -87,7 +87,7 @@ module  cpu (
     branch_predict u_branch_predict(
                        .clk           		( clk           		),
                        .rstn                ( rstn                  ),
-                       .chk_branch_pc       ( pc[9:2]        		),
+                       .chk_branch_pc       ( pc[9:1]        		),
                        .record_we     		( record_we     		),
                        .record_pc     		( pc_ID[9:2]     		),
                        .record_pc_result    ( record_pc_result      ),

@@ -8,7 +8,7 @@ module branch_predict(
         input record_data,              // 记录是否跳转
         input [31:0] record_pc_result,  // 记录跳转后 pc
         // 查询
-        input [9:2] chk_branch_pc,
+        input [9:1] chk_branch_pc,
         output predict,                 // 预测结果
         output [31:0] predict_pc        // 预测的 pc
     );
@@ -20,8 +20,8 @@ module branch_predict(
     wire [4: 0] chk_pc_hash    = chk_branch_pc[6:2];
     wire [4: 0] record_pc_hash = record_pc[6:2];
 
-    assign predict_pc = btb[chk_branch_pc];
-    assign predict    = rstn & record[{chk_pc_hash, history[chk_pc_hash]}][1] & (predict_pc != 0);
+    assign predict_pc = btb[chk_branch_pc[9:2]];
+    assign predict    = !chk_branch_pc[1] & rstn & record[{chk_pc_hash, history[chk_pc_hash]}][1] & (predict_pc != 0);
 
     always @(posedge clk) begin
         if (record_we) begin

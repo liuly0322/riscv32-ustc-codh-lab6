@@ -2,7 +2,8 @@
 # encoding=utf8
 import subprocess
 
-auto_tests = "sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri load_store".split()
+auto_tests = "sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri load_store compress".split()
+num_cases = 0
 
 for s in auto_tests:
     cpu_test_file_name = s[:-1] if s[-1].isdigit() else s
@@ -15,5 +16,6 @@ for s in auto_tests:
     print(out_text)
     if "失败" in out_text:
         exit(1)
+    num_cases = num_cases + out_text.count("结束运行样例") + out_text.count("通过测试")
 
-print("通过全部测试")
+print("通过全部测试，样例数{}".format(num_cases))

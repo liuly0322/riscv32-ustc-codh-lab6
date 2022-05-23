@@ -11,12 +11,6 @@ USTC CODH 课程的综合实验 lab6
 - <https://github.com/liuly0322>
 - <https://github.com/start-shine>
 
-模板来源：<https://github.com/liuly0322/ustc-cod-verilator>
-
-上面的模板链接中有本项目测试工具的具体使用方法。针对本项目，还额外增添了几个案例（见 `judge.py` ）
-
-具体测试样例对应的汇编代码见本目录下的 bypass.dump 和 ri.dump
-
 ## rv32i 指令集
 
 实现了所有的 rv32i 指令
@@ -29,6 +23,15 @@ USTC CODH 课程的综合实验 lab6
 - jal, jalr
 
 共计 37 条
+
+## rv32ic 压缩指令集
+
+- c.nop
+- c.add, c.addi, c.addi16sp, c.addi4spn, c.and, c.andi, c.slli, c.srai, c.srli, c.sub, c.mv, c.or, c.xor
+- c.j, c.jal, c.jr, c.jalr, c.beqz, c.bnez
+- c.li, c.lui, c.lw, c.lwsp, c.sw, c.swsp
+
+共计 26 条
 
 ## 冲突处理及分支预测
 
@@ -58,19 +61,27 @@ USTC CODH 课程的综合实验 lab6
 
 ~~其实这也是个 todo list，哪个做了就可以把哪个移出去了~~
 
-## CI/CD
+## CI/CD 及自动化测试
+
+### 持续集成
 
 本项目支持持续集成 (Continuous Integration)，通过 `test.py` 实现，每次对主分支的 push 会自动运行功能测试，如果有错误会显示
 
 以下是示例：
 
-自动测试
+| ![image-20220523150827507](report/ci.png) | ![image-20220523150934880](report/ci-fail.png) |
+| :---------------------------------------: | :--------------------------------------------: |
+|            Push 后自动运行测试            |                具体错误信息提示                |
 
-![](report/ci.png)
+### 本地测试
 
-失败原因查看
+本项目来源于模板：<https://github.com/liuly0322/ustc-cod-verilator>
 
-![](report/ci-fail.png)
+上面的模板链接中有本项目本地测试工具 `judge.py` 的具体说明及使用方法。本项目在模板的基础上另行增添了几个测试用例
+
+部分测试样例对应的汇编代码见本目录下的 bypass.dump， ri.dump 和 compress.dump
+
+本项目当前总测试样例数为 181 个
 
 ## 致谢
 
