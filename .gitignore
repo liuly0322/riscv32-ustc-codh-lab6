@@ -4,4 +4,4 @@ cpu.vcd
 cs3001h.tests
 headers/data.coe
 headers/text.coe
-wave.gtkw
+*.gtkw

@@ -356,7 +356,7 @@ assign record_data      = ctrl_jal_ID? 1: should_branch;
 assign record_pc_result = pc_nxt_EX;
 ```
 
-这里我们也将 `jal` 跳转后地址存入 BTB 表
+这里我们也将 `jal` 跳转后地址存入 BTB 表，使得 `jal` 指令的跳转后地址也可以在 EX 段计算出
 
 hazard 模块：
 
@@ -464,6 +464,111 @@ addi t6, zero, 1
 两级 BHT 在这种情况下将 CPI 几乎降低到了 1，相比 BHT 进一步提高了准确率
 
 ![image-20220521142921110](report/image-20220521142921110.png)
+
+### 实际应用准确率测试
+
+这里实际搭载了 gcc 编译出的贪吃蛇程序（具体见下文），进行了分支预测准确率的测试
+
+为了测试准确率，在 EX 段统计跳转指令和 jal 的次数，并统计跳转失败的发生：
+
+```verilog
+reg [31:0] is_branch_cnt, fail_cnt, is_jal_cnt;
+always @(posedge clk) begin
+    if (ctrl_branch_ID)
+        is_branch_cnt <= is_branch_cnt + 1;
+    if (ctrl_jal_ID)
+        is_jal_cnt <= is_jal_cnt + 1;
+    if (pc_branch_EX || jal_fail)
+        fail_cnt <= fail_cnt + 1;
+end
+```
+
+因为 PDU 模块为了真实上板做了降频，取边沿等处理，对于模拟 `I/O` 交互不是很友好，如果对 top 模块整体仿真，往往需要连续仿真几毫秒甚至几十毫秒以上，仿真速度较慢，因此这里采用 Verilator 模拟 PDU 模块的功能
+
+top 文件：
+
+```verilog
+module top_test(
+        input clk,              // clk100mhz
+        input rstn,             // cpu_resetn
+        output [31:0] pc,
+        // for simulate io
+        output [7:0] io_addr,
+        output io_rd,
+        input [31:0] io_din
+    );
+
+    wire [31 : 0] io_dout;
+    wire io_we;
+    wire [31 : 0] chk_data;
+    wire [31:0] vga_data;
+
+    cpu CPU (.clk(clk), .rstn(rstn), .vga_addr(0), .vga_data(vga_data),
+             .io_addr(io_addr), .io_dout(io_dout), .io_we(io_we),
+             .io_rd(io_rd), .io_din(io_din),
+             .pc(pc), .chk_addr(0), .chk_data(chk_data));
+
+endmodule
+```
+
+仿真文件：
+
+```cpp
+int swx_data = rand();
+cout << swx_data;
+int end_cnt = 0;
+int prev_pc = 0;
+
+while (!Verilated::gotFinish()) {
+    // 循环读取内存值
+    if (top->io_rd) {
+        int addr = top->io_addr;
+        if (addr == 0x18) {
+            top->io_din = main_time;
+        } else if (addr == 0x10) {
+            top->io_din = 1;
+        } else if (addr == 0x14) {
+            top->io_din = swx_data;
+        } else {
+            top->io_din = 0;
+        }
+    } else {
+        top->io_din = 0;
+    }
+    if (top->pc == prev_pc) {
+        end_cnt++;
+    } else {
+        end_cnt = 0;
+    }
+    if (end_cnt == 100) {
+        break;
+    }
+    prev_pc = top->pc;
+
+    top->clk = !top->clk;
+    top->eval();           // 仿真时间步进
+    tfp->dump(main_time);  // 波形文件写入步进
+    main_time++;
+}
+```
+
+这里模拟了游戏开始后，利用开关，随机给游戏输入一个种子 `swx_data` ，之后，贪吃蛇会吃掉它面前的苹果，CPU 上运行的程序再根据开关输入的随机数种子，生成下一个苹果所在的位置。接下来，贪吃蛇会一直向下撞到边界，游戏结束
+
+原先程序需要轮询等待计时器，显然会极大提高分支预测准确率，这里对汇编进行了修改，去除了等待计数器，排除了这一因素的干扰
+
+可以看到，该仿真流程模拟了贪吃蛇程序的主要流程，具有较好的代表性，下面记录测试五组数据的结果：
+
+|               |    组1    |    组2    |    组3    |    组4    |    组5     |
+| :-----------: | :-------: | :-------: | :-------: | :-------: | :--------: |
+|     种子      | 168024705 | 481046883 | 482655648 | 817451524 | 1428754955 |
+|      jal      |   0x510   |   0x511   |   0x4c4   |   0x514   |   0x52c    |
+|   jal 失败    |   0x29    |   0x29    |   0x0e    |   0x29    |    0x2e    |
+|    branch     |  0x1e08   |  0x1ec8   |  0x2025   |  0x207c   |   0x2164   |
+|  branch 失败  |   0xae    |   0xb0    |   0xa7    |   0xb6    |    0xbd    |
+| branch 预测率 |  97.74%   |  97.77%   |  97.97%   |  97.81%   |   97.79%   |
+|  整体预测率   |  97.61%   |  97.64%   |  98.08%   |  97.68%   |   97.62%   |
+
+整体预测率达到 97% 至 98% 左右
 
 ## 生命游戏
 
