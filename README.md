@@ -56,6 +56,20 @@ USTC CODH 课程的综合实验 lab6
 
 ~~其实这也是个 todo list，哪个做了就可以把哪个移出去了~~
 
+## CI/CD
+
+本项目支持持续集成 (Continuous Integration)，通过 `test.py` 实现，每次对主分支的 push 会自动运行功能测试，如果有错误会显示
+
+以下是示例：
+
+自动测试
+
+![](report/ci.png)
+
+失败原因查看
+
+![](report/ci-fail.png)
+
 ## 致谢
 
 - 本项目得到了中国科学技术大学 Vlab 实验平台的帮助与支持。

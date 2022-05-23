@@ -56,6 +56,8 @@
     - 一般地，对数据寄存器封装，使用 MMIO
     - 特别地，由于 VGA 模块数据需求量较大，采取了共享内存的方式
 
+项目仓库：<https://github.com/liuly0322/ustc-codh-lab6>
+
 ## 实验环境
 
 - Vivado 2019.1
@@ -801,6 +803,16 @@ inline void set(unsigned x, unsigned y, unsigned state) {
 ![image-20220521145504939](report/image-20220521145504939.png)
 
 详细视频：<http://home.ustc.edu.cn/~liuly0322/videos/snake.mp4>
+
+## 持续集成
+
+出于项目完整性考虑，使用 Github Actions，增添了自动的持续集成测试
+
+| ![image-20220523150827507](report/ci.png) | ![image-20220523150934880](report/ci-fail.png) |
+| :---------------------------------------: | :--------------------------------------------: |
+|            Push 后自动运行测试            |                具体错误信息提示                |
+
+测试脚本和 github actions 的 yml 文件具体参见本项目仓库
 
 ## 致谢
 
