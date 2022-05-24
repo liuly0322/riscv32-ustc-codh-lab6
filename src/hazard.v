@@ -13,7 +13,7 @@ module hazard(
     assign stall_IF = load_use_hazard | miss;
     assign stall_ID = miss;
     assign stall_EX = miss;
-    assign flush_IF = rstn & pc_change_EX;
-    assign flush_ID = rstn & (pc_change_EX | load_use_hazard);
+    assign flush_IF = rstn & ~miss & pc_change_EX;
+    assign flush_ID = rstn & ~miss & (pc_change_EX | load_use_hazard);
 
 endmodule

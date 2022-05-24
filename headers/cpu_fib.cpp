@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
                 }
                 cnt++;
                 cout << "预期" << b << " 实际" << data << endl;
-                if (cnt > 190) {
+                if (cnt > 147) {
                     cout << "通过 fib 测试" << endl;
                     cout << std::hex << "最小栈地址：" << min_stack << endl;
                     tfp->close();

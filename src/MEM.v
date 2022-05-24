@@ -48,13 +48,11 @@ module MEM(
 
 
     always@(posedge clk) begin
-        if (!miss) begin
-            pc_4_MEM            <= ~rstn? 0: pc_4_EX;
-            alu_out_MEM         <= ~rstn? 0: alu_out_EX;
-            ctrl_reg_write_MEM  <= ~rstn? 0: ctrl_reg_write_EX;
-            ctrl_wb_reg_src_MEM <= ~rstn? 0: ctrl_wb_reg_src_EX;
-            mdr_MEM             <= ~rstn? 0: mdr;
-            reg_wb_addr_MEM     <= ~rstn? 0: reg_wb_addr_EX;
-        end
+        pc_4_MEM            <= (~rstn | miss)? 0: pc_4_EX;
+        alu_out_MEM         <= (~rstn | miss)? 0: alu_out_EX;
+        ctrl_reg_write_MEM  <= (~rstn | miss)? 0: ctrl_reg_write_EX;
+        ctrl_wb_reg_src_MEM <= (~rstn | miss)? 0: ctrl_wb_reg_src_EX;
+        mdr_MEM             <= (~rstn | miss)? 0: mdr;
+        reg_wb_addr_MEM     <= (~rstn | miss)? 0: reg_wb_addr_EX;
     end
 endmodule

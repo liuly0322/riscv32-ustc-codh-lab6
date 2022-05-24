@@ -3,7 +3,6 @@ module IF(
         input [31: 0] pc_nxt_EX,
         input predict,
         input [31: 0] predict_pc,
-        input pc_change_EX,
         output reg [31: 0] pc,
         output reg [31: 0] ir_IF,
         output reg [31: 0] pc_IF,
@@ -36,7 +35,7 @@ module IF(
     always @(posedge clk) begin
         if (!rstn)
             pc <= 32'h3000;
-        else if (pc_change_EX)
+        else if (flush_IF)
             pc <= pc_nxt_EX;
         else if (stall_IF)
             pc <= pc;

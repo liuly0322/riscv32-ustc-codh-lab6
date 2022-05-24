@@ -407,9 +407,9 @@ while (!Verilated::gotFinish() && main_time < sim_time) {
 
 实际运行，得到结果：
 
-![image-20220524113325560](report/image-20220524113325560.png)
+![image-20220524141712576](report/image-20220524141712576.png)
 
-可以看到入栈出栈过程中对主存进行了正确的换入换出
+注意栈地址从 0xffffffff 到 0xffffc0a0，后 14 位从 `0x3fff` 遍历到 `0x00a0` ，几乎取遍了主存，可见在入栈出栈过程中 cache 进行了正确的换入换出
 
 ## 分支预测
 

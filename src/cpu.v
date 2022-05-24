@@ -121,7 +121,6 @@ module  cpu (
            .predict             ( predict           ),
            .predict_pc          ( predict_pc        ),
            .pc_nxt_EX    		( pc_nxt_EX    		),
-           .pc_change_EX 		( pc_change_EX 		),
            .ir_IF        		( ir_IF        		),
            .pc_IF        		( pc_IF        		),
            .pc_4_IF      		( pc_4_IF      		),

@@ -26,6 +26,8 @@ USTC CODH 课程的综合实验 lab6
 
 ## rv32ic 压缩指令集
 
+实现了所有的 rv32ic 指令
+
 - c.nop
 - c.add, c.addi, c.addi16sp, c.addi4spn, c.and, c.andi, c.slli, c.srai, c.srli, c.sub, c.mv, c.or, c.xor
 - c.j, c.jal, c.jr, c.jalr, c.beqz, c.bnez
@@ -45,7 +47,7 @@ USTC CODH 课程的综合实验 lab6
 
 整体性能上，当前 cpu 可以运行在约 85MHz 下
 
-## 更改存储结构
+## 更改存储结构及 L1 Cache
 
 - 对于 0x0000 至 0x3ffff，作为常用内存区域，与 VGA 共享内存
   这一部分相当于始终不会被换出的 cache
