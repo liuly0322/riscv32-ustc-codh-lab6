@@ -93,6 +93,8 @@
 - c.j, c.jal, c.jr, c.jalr, c.beqz, c.bnez
 - c.li, c.lui, c.lw, c.lwsp, c.sw, c.swsp
 
+RV32IC 是 RV32I 对应的压缩指令集，允许极大节省编译出程序的空间
+
 ### 原理介绍
 
 整体数据通路参考：
