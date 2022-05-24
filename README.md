@@ -47,11 +47,11 @@ USTC CODH 课程的综合实验 lab6
 
 整体性能上，当前 cpu 可以运行在约 85MHz 下
 
-## 更改存储结构及 L1 Cache
+## L1 Cache 及存储结构简介
 
-- 对于 0x0000 至 0x3ffff，作为常用内存区域，与 VGA 共享内存
-  这一部分相当于始终不会被换出的 cache
-- 0xff00 至 0xffff 是 MMIO 区域
+- 对于 0x00000000 至 0x000003ff，作为常用内存区域，与 VGA 共享内存
+  （这一部分相当于始终不会被换出的 cache）
+- 0x0000ff00 至 0x0000ffff 是 MMIO 区域
 - 其余部分使用 L1d cache 连接主存，总共使用 BRAM 16KB（16 千字节）
 
 具体 cache 设计：
@@ -82,7 +82,7 @@ tag 6 位，index 3 位，偏移 5 位（3 位字偏移）
 
 本项目来源于模板：<https://github.com/liuly0322/ustc-cod-verilator>
 
-上面的模板链接中有本项目本地测试工具 `judge.py` 的具体说明及使用方法。本项目在模板的基础上另行增添了几个测试用例
+上面的模板链接中有本项目本地测试工具 `judge.py` 的具体说明及使用方法。本项目根据自身需求，在模板的基础上另行增添了一些测试用例
 
 部分测试样例对应的汇编代码见本目录下的 bypass.dump， ri.dump 和 compress.dump
 

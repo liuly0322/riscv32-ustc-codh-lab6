@@ -51,13 +51,13 @@
 
 - 采用两级动态 Branch History Table 分支预测
 
-- 更改存储结构
+- 支持 L1d Cache，并调整存储结构
 
-  - 对于 0x0000 至 0x3ffff，作为常用内存区域，与 VGA 共享内存
+  - 对于 0x00000000 至 0x000003ff，作为常用内存区域，与 VGA 共享内存
 
-    这一部分相当于始终不会被换出的 cache
+    （这一部分相当于始终不会被换出的 cache）
     
-  - 0xff00 至 0xffff 是 MMIO 区域
+  - 0x0000ff00 至 0x0000ffff 是 MMIO 区域
     
   - 其余部分使用 L1d cache 连接主存，总共使用 BRAM 16KB（16 千字节）
 
