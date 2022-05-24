@@ -33,6 +33,7 @@ module  cpu (
 
     // id 段
     wire          flush_ID;             // 清空 id，目前是由于 load-use hazard 或者 pc 变动（与预测的 pc 不符）
+    wire          stall_ID;             // cache miss
     wire [31:0]   reg_data_debug;       // pdu 使用的读寄存器
     wire [31:0]   pc_ID;                // id/ex 段 pc
     wire [31:0]   pc_4_ID;              // id/ex 段 pc+4
@@ -58,6 +59,7 @@ module  cpu (
     wire          load_use_hazard;      // 检测当前指令是否与前一条 ld 指令产生相关，如果是，stall if 并 flush id
 
     // ex 段
+    wire          stall_EX;             // cache miss
     wire          ctrl_reg_write_EX;
     wire [1: 0]   ctrl_wb_reg_src_EX;
     wire [4: 0]   reg_wb_addr_EX;
@@ -74,6 +76,7 @@ module  cpu (
     wire [2: 0]   funct3_EX;
 
     // mem 段
+    wire miss;
     wire [31: 0]  pc_4_MEM;
     wire [31: 0]  alu_out_MEM;
     wire [31: 0]  mdr_MEM;
@@ -99,11 +102,14 @@ module  cpu (
 
     hazard u_hazard(
                .rstn               ( rstn              ),
+               .miss               ( miss              ),
                .load_use_hazard    ( load_use_hazard   ),
                .pc_change_EX       ( pc_change_EX      ),
                .flush_IF           ( flush_IF          ),
                .stall_IF           ( stall_IF          ),
-               .flush_ID           ( flush_ID          )
+               .flush_ID           ( flush_ID          ),
+               .stall_ID           ( stall_ID          ),
+               .stall_EX           ( stall_EX          )
            );
 
     IF u_IF(
@@ -130,6 +136,7 @@ module  cpu (
            .predict_ID         ( predict_ID        ),
            .funct3_ID          ( funct3_ID         ),
            .flush_ID           ( flush_ID | ~rstn  ),
+           .stall_ID           ( stall_ID          ),
            .reg_addr_debug     ( reg_addr_debug    ),
            .reg_data_debug     ( reg_data_debug    ),
            .ctrl_reg_write_MEM ( ctrl_reg_write_MEM),
@@ -162,6 +169,7 @@ module  cpu (
     EX u_EX(
            .clk                ( clk               ),
            .rstn               ( rstn              ),
+           .stall_EX           ( stall_EX          ),
            .funct3_ID          ( funct3_ID         ),
            .predict_ID         ( predict_ID        ),
            .record_we          ( record_we         ),
@@ -202,6 +210,7 @@ module  cpu (
        );
 
     MEM u_MEM(
+            .miss               ( miss              ),
             .mem_addr_debug     ( vga_addr          ),
             .io_din             ( io_din            ),
             .mem_data_debug     ( vga_data          ),

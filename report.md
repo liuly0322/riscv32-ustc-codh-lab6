@@ -48,7 +48,19 @@
 本小组此次实验中在流水线 CPU 的基础上，增加拓展了以下内容：
 
 - RV32I 指令集补全（37 条），RV32IC 压缩指令拓展（26 条）
+
 - 采用两级动态 Branch History Table 分支预测
+
+- 更改存储结构
+
+  - 对于 0x0000 至 0x3ffff，作为常用内存区域，与 VGA 共享内存
+
+    这一部分相当于始终不会被换出的 cache
+    
+  - 0xff00 至 0xffff 是 MMIO 区域
+    
+  - 其余部分使用 L1d cache 连接主存，总共使用 BRAM 16KB（16 千字节）
+
 - 提供可以实际运行的生命游戏，井字棋和贪吃蛇程序
   - 使用 C 语言编写程序，探索了交叉编译流程，增进了对计算机抽象层级的理解
   - 增添了对 VGA 屏幕外设的使用，使得程序更具有表现力
@@ -252,6 +264,150 @@ Verilator 是一款高性能的 Verilog/System Verilog 开源仿真工具。运�
 | -------------------------- | -------------------------- |
 
 图：覆盖测试能解决的痛点
+
+## 存储结构及一级数据 Cache
+
+本实验更改了原先存储结构
+
+- 对于 0x0000 至 0x3ffff，作为常用内存区域，与 VGA 共享内存
+
+  这一部分相当于始终不会被换出的 cache
+
+- 0xff00 至 0xffff 是 MMIO 区域
+
+- 其余部分使用 L1d cache 连接主存，总共使用 BRAM 16KB（16 千字节）
+
+这一部分可以通过组合逻辑对内存进行封装：
+
+```verilog
+reg  [31:0] mem_in;         // 写入数据寄存器的数据
+wire [31:0] shared_out, cache_out;
+wire [31:0] mem_out;        // 数据存储器读出的 32 位数据
+reg  [31:0] mdr;            // 实际返回的数据
+
+wire is_mmio = (a[31:8] == 24'h0000ff);    // 判断现在是主存还是 mmio
+wire is_shared = (a[31:8] < 4);			   // 共享内存区域
+wire is_cache  = ~is_shared & ~is_mmio;
+assign spo     = is_mmio? io_din : mdr;
+assign mem_out = is_shared? shared_out: cache_out;
+```
+
+本实验中的 Cache 采用直接映射 + 写回 + 写分配策略，具体状态机如下图所示：
+
+![image-20220524112352064](report/image-20220524112352064.png)
+
+Cache 代码及可综合的 BRAM 代码参考：<https://github.com/Summer-Summer/ComputerArchitectureLab>
+
+本实验 Cache 规格：
+
+tag 6 位，index 3 位，偏移 5 位（3 位字偏移）
+
+增添上 Cache 后，需要对原先的 hazard 处理模块也进行相应的更改
+
+```verilog
+module hazard(
+        input rstn,
+        input miss,
+        input pc_change_EX,
+        input load_use_hazard,
+        output stall_IF,
+        output stall_ID,
+        output stall_EX,
+        output flush_IF,
+        output flush_ID
+    );
+
+    assign stall_IF = load_use_hazard | miss;
+    assign stall_ID = miss;
+    assign stall_EX = miss;
+    assign flush_IF = rstn & pc_change_EX;
+    assign flush_ID = rstn & (pc_change_EX | load_use_hazard);
+
+endmodule
+```
+
+在 Cache Miss 时，需要阻塞流水线的各个段间寄存器
+
+### 功能测试
+
+为了验证我们 Cache 功能是否正常，这里编写了下述测试程序：
+
+```c
+// MMIO: 8'h0c: 数码管输出
+int fib_ans[200] = {1, 1};
+
+int fib(int x) {
+    volatile unsigned* p = 0xff0c;
+    if (fib_ans[x]) {
+        return fib_ans[x];
+    }
+    int ret = fib(x-1) + fib(x-2);
+    fib_ans[x] = ret;
+    *p = ret;
+    return ret;
+}
+
+int main() {
+    fib(200);
+}
+```
+
+依次计算斐波那契数列，并将结果输出到数码管
+
+编译后得到：
+
+```plaintext
+3020:	ff010113          	addi	x2,x2,-16
+......
+3080:	01010113          	addi	x2,x2,16
+3084:	00008067          	jalr	x0,0(x1)
+```
+
+可以看到，在递归计算时会用到栈指针 `sp` ，我们可以在计算过程中记录 `sp` 的最小值，仿真程序：
+
+```cpp
+int a = 1, b = 1, cnt = 0;
+unsigned min_stack = 0xffffffff;
+
+while (!Verilated::gotFinish() && main_time < sim_time) {
+    // 循环读取内存值
+
+    top->clk = !top->clk;
+    top->eval();           // 仿真时间步进
+    tfp->dump(main_time);  // 波形文件写入步进
+
+    if (top->io_we) {
+        int data = top->io_dout;
+        if (data != b) {
+            b = a + b;
+            a = b - a;
+            if (data != b) {
+                cout << "失败：计算 fib 预期" << b << endl;
+            }
+            cnt++;
+            cout << "预期" << b << " 实际" << data << endl;
+            if (cnt > 190) {
+                cout << "通过 fib 测试" << endl;
+                cout << std::hex << "最小栈地址：" << min_stack << endl;
+                tfp->close();
+                exit(0);
+            }
+        }
+    }
+
+    if (top->chk_data < min_stack && main_time > 200) {
+        min_stack = top->chk_data;
+    }
+
+    main_time++;
+}
+```
+
+实际运行，得到结果：
+
+![image-20220524113325560](report/image-20220524113325560.png)
+
+可以看到入栈出栈过程中对主存进行了正确的换入换出
 
 ## 分支预测
 

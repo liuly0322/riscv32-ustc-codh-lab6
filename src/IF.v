@@ -22,7 +22,7 @@ module IF(
         if (flush_IF | !rstn) begin
             pc_IF       <= 0;
             pc_4_IF     <= 0;
-            ir_IF       <= 0;
+            ir_IF       <= 32'h13;
             predict_IF  <= 0;
         end
         else if (!stall_IF) begin

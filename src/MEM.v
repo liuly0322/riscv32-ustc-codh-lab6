@@ -22,7 +22,8 @@ module MEM(
         output reg [31: 0]  mdr_MEM,
         output reg          ctrl_reg_write_MEM,
         output reg [1: 0]   ctrl_wb_reg_src_MEM,
-        output reg [4: 0]   reg_wb_addr_MEM
+        output reg [4: 0]   reg_wb_addr_MEM,
+        output miss
     );
 
     // 对数据寄存器的一个包装。在数据寄存器的基础上增加了 mmio
@@ -41,16 +42,19 @@ module MEM(
                     .io_din(io_din),
                     .io_dout(io_dout),
                     .io_rd(io_rd),
-                    .io_we(io_we)
+                    .io_we(io_we),
+                    .miss(miss)
                 );
 
 
     always@(posedge clk) begin
-        pc_4_MEM            <= ~rstn? 0: pc_4_EX;
-        alu_out_MEM         <= ~rstn? 0: alu_out_EX;
-        ctrl_reg_write_MEM  <= ~rstn? 0: ctrl_reg_write_EX;
-        ctrl_wb_reg_src_MEM <= ~rstn? 0: ctrl_wb_reg_src_EX;
-        mdr_MEM             <= ~rstn? 0: mdr;
-        reg_wb_addr_MEM     <= ~rstn? 0: reg_wb_addr_EX;
+        if (!miss) begin
+            pc_4_MEM            <= ~rstn? 0: pc_4_EX;
+            alu_out_MEM         <= ~rstn? 0: alu_out_EX;
+            ctrl_reg_write_MEM  <= ~rstn? 0: ctrl_reg_write_EX;
+            ctrl_wb_reg_src_MEM <= ~rstn? 0: ctrl_wb_reg_src_EX;
+            mdr_MEM             <= ~rstn? 0: mdr;
+            reg_wb_addr_MEM     <= ~rstn? 0: reg_wb_addr_EX;
+        end
     end
 endmodule

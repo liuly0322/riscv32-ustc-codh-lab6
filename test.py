@@ -2,7 +2,7 @@
 # encoding=utf8
 import subprocess
 
-auto_tests = "sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri load_store compress".split()
+auto_tests = "sort_vcd bypass1 bypass2 bypass3 bypass4 bypass5 no_hazard branch ri load_store compress fib".split()
 num_cases = 0
 
 for s in auto_tests:

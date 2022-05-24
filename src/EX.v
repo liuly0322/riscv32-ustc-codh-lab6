@@ -1,6 +1,7 @@
 module EX(
         input clk,
         input rstn,
+        input              stall_EX,
         input [2: 0]       funct3_ID,
         input              predict_ID,
         input [3: 0]       ctrl_alu_op_ID,
@@ -115,15 +116,17 @@ module EX(
     assign record_pc_result = pc_nxt_EX;
 
     always @(posedge clk) begin
-        alu_out_EX         <= ~rstn? 0: alu_out;
-        rd2_EX             <= ~rstn? 0: rd2_forward;
-        ctrl_reg_write_EX  <= ~rstn? 0: ctrl_reg_write_ID;
-        ctrl_wb_reg_src_EX <= ~rstn? 0: ctrl_wb_reg_src_ID;
-        ctrl_mem_r_EX      <= ~rstn? 0: ctrl_mem_r_ID;
-        ctrl_mem_w_EX      <= ~rstn? 0: ctrl_mem_w_ID;
-        pc_4_EX            <= ~rstn? 0: pc_4_ID;
-        reg_wb_addr_EX     <= ~rstn? 0: reg_wb_addr_ID;
-        funct3_EX          <= ~rstn? 0: funct3_ID;
+        if (!stall_EX) begin
+            alu_out_EX         <= ~rstn? 0: alu_out;
+            rd2_EX             <= ~rstn? 0: rd2_forward;
+            ctrl_reg_write_EX  <= ~rstn? 0: ctrl_reg_write_ID;
+            ctrl_wb_reg_src_EX <= ~rstn? 0: ctrl_wb_reg_src_ID;
+            ctrl_mem_r_EX      <= ~rstn? 0: ctrl_mem_r_ID;
+            ctrl_mem_w_EX      <= ~rstn? 0: ctrl_mem_w_ID;
+            pc_4_EX            <= ~rstn? 0: pc_4_ID;
+            reg_wb_addr_EX     <= ~rstn? 0: reg_wb_addr_ID;
+            funct3_EX          <= ~rstn? 0: funct3_ID;
+        end
     end
 
 endmodule

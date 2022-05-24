@@ -12,7 +12,8 @@ module mem_wrapper (
         io_dout,
         io_we,
         io_rd,
-        io_din
+        io_din,
+        miss
     );
 
     input wire [31 : 0] a;
@@ -24,6 +25,7 @@ module mem_wrapper (
     input wire [2: 0] funct3;
     output wire [31 : 0] spo;
     output wire [31 : 0] dpo;
+    output wire miss;
 
     // 外设地址范围： 0x00, 0x04, 0x08, 0x0c, 0x10, 0x14, 0x18...
     input [31:0]   io_din;      // 来自外设输入的数据
@@ -34,18 +36,38 @@ module mem_wrapper (
 
     wire is_mmio = (a[31:8] == 24'h0000ff);    // 判断现在是主存还是 mmio
     reg  [31:0] mem_in;         // 写入数据寄存器的数据
+    wire [31:0] shared_out, cache_out;
     wire [31:0] mem_out;        // 数据存储器读出的 32 位数据
     reg  [31:0] mdr;            // 实际返回的数据
-    assign spo = is_mmio? io_din : mdr;
+    wire is_shared = (a[31:8] < 4);
+    wire is_cache  = ~is_shared & ~is_mmio;
+    assign spo     = is_mmio? io_din : mdr;
+    assign mem_out = is_shared? shared_out: cache_out;
     dist_mem data_mem (
                  .a(a[9:2]),
                  .d(mem_in),
                  .dpra(dpra[9:2]),
                  .clk(clk),
-                 .we(we & ~is_mmio),
-                 .spo(mem_out),
+                 .we(we & is_shared),
+                 .spo(shared_out),
                  .dpo(dpo)
              );
+
+    cache #(
+              .LINE_ADDR_LEN 		( 3 		),
+              .SET_ADDR_LEN  		( 3 		),
+              .TAG_ADDR_LEN  		( 6 		))
+          u_cache(
+              //ports
+              .clk     		( clk     		),
+              .miss    		( miss    		),
+              .addr    		( a    		    ),
+              .rd_req  		( en & is_cache ),
+              .rd_data 		( cache_out 	),
+              .wr_req  		( we & is_cache ),
+              .wr_data 		( mem_in 		)
+          );
+
 
     always @(*) begin
         case (funct3)
