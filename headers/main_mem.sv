@@ -38,9 +38,12 @@ module main_mem #(                  // ���棬ÿ�ζ�д��line Ϊ��
     reg  rd_cycle, wr_cycle;
     reg  [ADDR_LEN-1:0] addr_last = 0;
     reg [31:0] rd_line_latch [LINE_SIZE];
-    wire [LINE_ADDR_LEN-1:0] wr_line_addr = {wr_delay-(WR_CYCLE-LINE_SIZE)}[LINE_ADDR_LEN-1:0];
-    wire [LINE_ADDR_LEN-1:0] rd_line_addr = {rd_delay-1}[LINE_ADDR_LEN-1:0];
-    wire [LINE_ADDR_LEN-1:0] rd_out_line_addr = {rd_delay-3}[LINE_ADDR_LEN-1:0];
+    wire [31:0] wr_line_addr_t = wr_delay-(WR_CYCLE-LINE_SIZE);
+    wire [31:0] rd_line_addr_t = rd_delay-1;
+    wire [31:0] rd_out_line_addr_t = rd_delay-3;
+    wire [LINE_ADDR_LEN-1:0] wr_line_addr = wr_line_addr_t[LINE_ADDR_LEN-1:0];
+    wire [LINE_ADDR_LEN-1:0] rd_line_addr = rd_line_addr_t[LINE_ADDR_LEN-1:0];
+    wire [LINE_ADDR_LEN-1:0] rd_out_line_addr = rd_out_line_addr_t[LINE_ADDR_LEN-1:0];
 
     assign gnt = (rd_cycle & rd_ok) | (wr_cycle & wr_ok);
 
