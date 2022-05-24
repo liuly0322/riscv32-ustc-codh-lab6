@@ -1,0 +1,7 @@
+obj_dir/
+cpu.vcd
+.vscode/
+cs3001h.tests
+headers/data.coe
+headers/text.coe
+*.gtkw
