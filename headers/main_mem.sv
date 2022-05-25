@@ -40,7 +40,7 @@ module main_mem #(                  // ���棬ÿ�ζ�д��line Ϊ��
     reg [31:0] rd_line_latch [LINE_SIZE];
     wire [31:0] wr_line_addr_t = wr_delay-(WR_CYCLE-LINE_SIZE);
     wire [31:0] rd_line_addr_t = rd_delay-1;
-    wire [31:0] rd_out_line_addr_t = rd_delay-3;
+    wire [31:0] rd_out_line_addr_t = rd_delay-2;
     wire [LINE_ADDR_LEN-1:0] wr_line_addr = wr_line_addr_t[LINE_ADDR_LEN-1:0];
     wire [LINE_ADDR_LEN-1:0] rd_line_addr = rd_line_addr_t[LINE_ADDR_LEN-1:0];
     wire [LINE_ADDR_LEN-1:0] rd_out_line_addr = rd_out_line_addr_t[LINE_ADDR_LEN-1:0];
@@ -96,7 +96,7 @@ module main_mem #(                  // ���棬ÿ�ζ�д��line Ϊ��
                     if(rd_delay>=1 && rd_delay<1+LINE_SIZE) begin
                         mem_addr    = {addr, rd_line_addr};
                     end
-                    if(rd_delay>=3 && rd_delay<3+LINE_SIZE) begin
+                    if(rd_delay>=2 && rd_delay<2+LINE_SIZE) begin
                         rd_line_latch[rd_out_line_addr] <= mem_rd_data;
                     end
                     rd_delay <= rd_delay + 1;

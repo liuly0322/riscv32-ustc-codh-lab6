@@ -271,7 +271,7 @@ Verilator 是一款高性能的 Verilog/System Verilog 开源仿真工具。运�
 
 本实验更改了原先存储结构
 
-- 对于 0x0000 至 0x3ffff，作为常用内存区域，与 VGA 共享内存
+- 对于 0x0000 至 0x03ff，作为常用内存区域，与 VGA 共享内存
 
   这一部分相当于始终不会被换出的 cache
 
@@ -350,7 +350,8 @@ int fib(int x) {
 }
 
 int main() {
-    fib(200);
+    // 这里测试栈深度
+    fib(...);
 }
 ```
 
@@ -365,7 +366,11 @@ int main() {
 3084:	00008067          	jalr	x0,0(x1)
 ```
 
-可以看到，在递归计算时会用到栈指针 `sp` ，我们可以在计算过程中记录 `sp` 的最小值，仿真程序：
+可以看到，在递归计算时会用到栈指针 `sp` 
+
+这里我们靠栈指针遍历访问整个主存。可以观察到 `sp` 每次变化 16 字节，我们的主存大小 16 千字节，所以此处实际调用 `fib(1023)` 进行测试
+
+我们可以在计算过程中记录 `sp` 的最小值，仿真程序：
 
 ```cpp
 int a = 1, b = 1, cnt = 0;
@@ -387,8 +392,8 @@ while (!Verilated::gotFinish() && main_time < sim_time) {
                 cout << "失败：计算 fib 预期" << b << endl;
             }
             cnt++;
-            cout << "预期" << b << " 实际" << data << endl;
-            if (cnt > 190) {
+            cout << cnt << " 预期" << b << " 实际" << data << endl;
+            if (cnt > 1020) {
                 cout << "通过 fib 测试" << endl;
                 cout << std::hex << "最小栈地址：" << min_stack << endl;
                 tfp->close();
@@ -407,9 +412,9 @@ while (!Verilated::gotFinish() && main_time < sim_time) {
 
 实际运行，得到结果：
 
-![image-20220524141712576](report/image-20220524141712576.png)
+![image-20220525111604402](report/image-20220525111604402.png)
 
-注意栈地址从 0xffffffff 到 0xffffc0a0，后 14 位从 `0x3fff` 遍历到 `0x00a0` ，几乎取遍了主存，可见在入栈出栈过程中 cache 进行了正确的换入换出
+注意栈地址从 0xffffffff 到 0xffffc000，后 14 位从 `0x3fff` 遍历到 `0x0000` ，取遍了主存，可见在入栈出栈过程中 cache 进行了正确的换入换出，cache 功能正确
 
 ## 分支预测
 
