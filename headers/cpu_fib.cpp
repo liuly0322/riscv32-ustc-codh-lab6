@@ -52,10 +52,13 @@ int main(int argc, char** argv) {
                 b = a + b;
                 a = b - a;
                 if (data != b) {
-                    cout << "失败：计算 fib 预期" << b << endl;
+                    cout << "失败：";
                 }
                 cnt++;
                 cout << cnt << " 预期" << b << " 实际" << data << endl;
+                if (data != b) {
+                    break;
+                }
                 if (cnt > 1020) {
                     cout << "通过 fib 测试" << endl;
                     cout << std::hex << "最小栈地址：" << min_stack << endl;

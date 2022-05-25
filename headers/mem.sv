@@ -1,6 +1,6 @@
 
-module mem #(                   //
-        parameter  ADDR_LEN  = 11   //
+module mem #(
+        parameter  ADDR_LEN  = 11
     ) (
         input  clk, rst,
         input  [ADDR_LEN-1:0] addr, // memory address
@@ -11,7 +11,7 @@ module mem #(                   //
     localparam MEM_SIZE = 1<<ADDR_LEN;
     reg [31:0] ram_cell [MEM_SIZE];
 
-    always @ (posedge clk or posedge rst)
+    always @ (posedge clk)
         if(rst)
             rd_data <= 0;
         else
